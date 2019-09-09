@@ -1,4 +1,5 @@
 import click
+import sys
 from .helpers import CustomMultiCommand
 from .app import App
 
@@ -6,17 +7,23 @@ from .app import App
 @click.group(
     cls=CustomMultiCommand, context_settings={"help_option_names": ["-h", "--help"]}
 )
-# TODO: Improve help message.
+@click.option(
+    "--log-file",
+    "-l",
+    type=click.File("w"),
+    default=sys.stderr,
+    show_default="stderr",
+    help="File to log errors and warnings.",
+)
 @click.option("--verbose", "-v", is_flag=True, help="Enable verbose mode.")
 @click.pass_context
-def cli(ctx, verbose):
+def cli(ctx, log_file, verbose):
     """
     Run Git work flows for GitHub with issue tracking ticket numbers.
     """
-    ctx.obj = App(verbose=verbose)
+    ctx.obj = App(log_file=log_file, verbose=verbose)
 
 
-# TODO: Show example in documentation.
 @click.argument("issue_id")
 @click.option("-b", "--base-branch", help="The base branch to perform this action on.")
 @cli.command()
@@ -28,12 +35,18 @@ def branch(app, issue_id: str, base_branch: str):
     The new branch name is taken from the title of the issue found.
     The new branch is created off of the --base-branch or the default base branch.
 
-    NOTE: User confirmation is required before the branch is created.
+    \b
+    NOTE
+        User confirmation is required before the branch is created.
+
+    \b
+    EXAMPLES
+        $ mgit branch JIR-123
+        $ mgit branch JIR-123 --base-branch develop
     """
     app.branch(issue_id, base_branch)
 
 
-# TODO: Show example in documentation.
 @click.option("-m", "--message", help="The commit message.")
 @cli.command()
 @click.pass_obj
@@ -45,7 +58,14 @@ def commit(app, message: str):
     The commit message is extracted from the branch name if one is not supplied
     using the --message option.
 
-    NOTE: User confirmation is required before the commit is created.
+    \b
+    NOTE
+        User confirmation is required before the commit is created.
+
+    \b
+    EXAMPLES
+        $ mgit commit
+        $ mgit commit --message 'Update different from title'
     """
     app.commit(message)
 
@@ -64,7 +84,14 @@ def pull_request(app, base_branch: str):
     """
     Create a GitHub Pull Request for the specified branch.
 
-    NOTE: User confirmation is required before the pull request is created.
+    \b
+    NOTE
+        User confirmation is required before the pull request is created.
+
+    \b
+    EXAMPLES
+        $ mgit pull-request
+        $ mgit pull-request --base-branch develop
     """
     app.pull_request(base_branch)
 
