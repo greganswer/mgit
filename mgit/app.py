@@ -29,6 +29,32 @@ class App:
 
     def commit(self, message: str):
         """ Create a commit and push to GitHub. """
+        if not message:
+            try:
+                message = Issue.from_branch(current_branch()).title()
+            except ValueError:
+                self.log(
+                    (
+                        f"The {current_branch()} branch does not contain an issue ID and title.\n"
+                        "Please use a different branch or provide the --message option to provide a custom message for this commit."
+                    )
+                )
+                sys.exit(1)
+        self.echo(
+            (
+                f"This will do the following:\n"
+                f"    - Add all uncommitted files\n"
+                f"    - Add all uncommitted files\n"
+                f'    - Create a commit with the message "{self.green(message)}"\n'
+                f"    - Push the changes to origin\n"
+            )
+        )
+        self.confirm_or_abort()
+        self.safe_execute("git add .")
+        self.safe_execute(f"git commit -m {message}")
+        self.execute_first_success(
+            "git push", f"git push --set-upstream origin {current_branch()}"
+        )
 
     def open(self):
         """ Open an issue in the Google Chrome browser. """
@@ -57,6 +83,14 @@ class App:
             self.execute(command)
         except subprocess.CalledProcessError as e:
             sys.exit(e.returncode)
+
+    def execute_first_success(self, *commands):
+        """ Execute commands until the first one succeeds. """
+        for command in commands:
+            try:
+                return self.execute(command)
+            except subprocess.CalledProcessError:
+                pass
 
     # Issue Helpers
 
