@@ -29,6 +29,20 @@ class App:
 
     def commit(self, message: str):
         """ Create a commit and push to GitHub. """
+        if not message:
+            try:
+                message = Issue.from_branch(current_branch()).title()
+            except ValueError:
+                self.log(f'The {current_branch()} branch does not contain an issue ID and title.')
+                self.log('Please use a different branch or provide the --message option to provide a custom message for this commit.')
+                sys.exit(1)
+        self.echo(
+            f"""This will do the following:
+            - Add all uncommitted files
+            - Create a commit with the message "{GREEN}{message}{NO_COLOR}"
+            - Push the changes to origin"""
+        )
+        self.confirm_or_abort()
 
     def open(self):
         """ Open an issue in the Google Chrome browser. """
