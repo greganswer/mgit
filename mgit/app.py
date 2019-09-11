@@ -1,6 +1,7 @@
 import click
 import subprocess
 import sys
+import requests
 from .git import *
 from .issue import Issue
 
@@ -97,7 +98,10 @@ class App:
     def get_issue(self, issue_id: str) -> Issue:
         """ Get Issue info by making an HTTP request. """
         # TODO: Use config value to determine what API to request issue info from.
-        return Issue("JIR-123", "Update Readme.md file")
+        url = "http://www.mocky.io/v2/5d78f3f13000003c3f31f89e"
+        res = requests.get(url, headers={"content-type": "application/json"})
+        title = res.json()["fields"]["summary"]
+        return Issue(issue_id, title)
 
     # Click Helpers
 
