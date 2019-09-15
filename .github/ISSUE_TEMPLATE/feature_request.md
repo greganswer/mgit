@@ -6,12 +6,17 @@ labels: ''
 assignees: ''
 
 ---
+```ghekin
+Feature: Automatically close GitHub issue
+  As a
+  I can
+  So that
 
-### Tasks
-
-- [ ] 
-
-### Details
+  Scenario:
+    Given
+    When
+    Then
+```
 
 ### Resources
 
