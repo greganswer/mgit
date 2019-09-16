@@ -16,6 +16,7 @@ from .app import App
     help="File to log errors and warnings.",
 )
 @click.option("--verbose", "-v", is_flag=True, help="Enable verbose mode.")
+@click.version_option(message='%(prog)s version %(version)s')
 @click.pass_context
 def cli(ctx, log_file, verbose):
     """
