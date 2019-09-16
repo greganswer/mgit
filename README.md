@@ -13,13 +13,60 @@
 
 Run Git work flows for GitHub with issue tracking ticket numbers from issue tracking services like Jira.
 
+Sample output from running the `mgit --help` command:
+
+```
+$ mgit --help
+Usage: mgit [OPTIONS] COMMAND [ARGS]...
+
+  Run Git work flows for GitHub with issue tracking ticket numbers.
+
+Options:
+  -l, --log-file FILENAME  File to log errors and warnings.  [default:
+                           (stderr)]
+  -v, --verbose            Enable verbose mode.
+  --version                Show the version and exit.
+  -h, --help               Show this message and exit.
+
+Commands:
+  branch        Create a branch using issue ID and title.
+  commit        Create a commit and push to GitHub.
+  open          Open an issue in the Google Chrome browser.
+  pr            Alias for pull-request.
+  pull-request  Create a GitHub Pull Request for the specified branch.
+```
+
+Sample output from running the `mgit branch --help` command:
+
+```
+$ mgit branch --help
+Usage: mgit branch [OPTIONS] ISSUE_ID
+
+  Create a branch using issue ID and title.
+
+  The new branch name is taken from the title of the issue found. The new
+  branch is created off of the --base-branch or the default base branch.
+
+  NOTE
+      User confirmation is required before the branch is created.
+
+  EXAMPLES
+      $ mgit branch JIR-123
+      $ mgit branch JIR-123 --base-branch develop
+
+Options:
+  -b, --base-branch TEXT  The base branch to perform this action on.
+  -h, --help              Show this message and exit.
+```
+
 ## Installation
 
 **Warning:** This installation method is temporary until the best distribution
 method is determined.
 
 1. `git clone git@github.com:greganswer/mgit.git`
-2. `pip3 install .`
+1. `cd mgit`
+1. `pip3 install .`
 
 ## Usage
 
@@ -51,8 +98,8 @@ mgit tag
 
 Make sure you have [Python 3.7.4](https://www.python.org/downloads) installed.
 
-There are 2 ways to set this up for development: standard vs. `virtualenvwrapper`. 
-The `virtualenvwrapper` package requires a one time setup per machine but it's a bit 
+There are 2 ways to set this up for development: standard vs. `virtualenvwrapper`.
+The `virtualenvwrapper` package requires a one time setup per machine but it's a bit
 easier to use day-to-day.
 
 #### standard
@@ -98,7 +145,7 @@ If you prefer to use `virtualenvwrapper` do the following:
         mkvirtualenv mgit
 
 1. Enter the project environment
-        
+
         workon mgit
 
 Refer to [this Stack Overflow](https://stackoverflow.com/a/25583193)
