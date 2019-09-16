@@ -25,7 +25,7 @@ mgit branch JIR-642
 mgit commit
 #=> Message: JIR-642: Update Readme File
 
-# If you make changes and run it again, it will make another commit with the 
+# If you make changes and run it again, it will make another commit with the
 # same name
 mgit commit
 #=> Message: JIR-642: Update Readme File

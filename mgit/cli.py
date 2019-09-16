@@ -2,7 +2,7 @@ import click
 import sys
 from .helpers import CustomMultiCommand
 from .app import App
-
+from ._version import __version__
 
 @click.group(
     cls=CustomMultiCommand, context_settings={"help_option_names": ["-h", "--help"]}
@@ -16,7 +16,7 @@ from .app import App
     help="File to log errors and warnings.",
 )
 @click.option("--verbose", "-v", is_flag=True, help="Enable verbose mode.")
-@click.version_option(message='%(prog)s version %(version)s')
+@click.version_option(version=__version__, message="%(prog)s version %(version)s")
 @click.pass_context
 def cli(ctx, log_file, verbose):
     """
