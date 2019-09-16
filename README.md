@@ -1,17 +1,25 @@
 # mgit
 
-- [Installation](#installation)
-- [Usage](#usage)
-- [Development](#development)
-  - [Virtual environment](#virtual-environment)
-    - [virtualenvwrapper](#virtualenvwrapper)
-- [Contributing](#contributing)
-- [License](#license)
-- [Code of Conduct](#code-of-conduct)
+- [mgit](#mgit)
+  - [Installation](#installation)
+  - [Usage](#usage)
+  - [Development](#development)
+    - [Virtual environment](#virtual-environment)
+      - [standard](#standard)
+      - [virtualenvwrapper](#virtualenvwrapper)
+  - [Contributing](#contributing)
+  - [License](#license)
+  - [Code of Conduct](#code-of-conduct)
 
 Run Git work flows for GitHub with issue tracking ticket numbers from issue tracking services like Jira.
 
 ## Installation
+
+**Warning:** This installation method is temporary until the best distribution
+method is determined.
+
+1. `git clone git@github.com:greganswer/mgit.git`
+2. `pip3 install .`
 
 ## Usage
 
@@ -41,23 +49,27 @@ mgit tag
 
 ### Virtual environment
 
-1. Install [Python 3.7.4](https://www.python.org/downloads)
+Make sure you have [Python 3.7.4](https://www.python.org/downloads) installed.
 
-1. Install packages locally
+There are 2 ways to set this up for development: standard vs. `virtualenvwrapper`. 
+The `virtualenvwrapper` package requires a one time setup per machine but it's a bit 
+easier to use day-to-day.
 
-        pip3 install --editable .
+#### standard
 
-1. Install **virtualenv** using pip3
+```bash
+# Install packages locally
+pip3 install --editable .
 
-        pip3 install virtualenv
+# Install **virtualenv** using pip3
+pip3 install virtualenv
 
-1. Create a virtual environment. **NOTE:** You can use any name instead of **venv**.
+# Create a virtual environment. **NOTE:** You can use any name instead of **venv**.
+python3 -m venv env
 
-        python3 -m venv env
-
-1. Active your virtual environment:
-
-        source venv/bin/activate
+# Activate your virtual environment:
+source venv/bin/activate
+```
 
 If you need to deactivate:
 
@@ -81,11 +93,13 @@ If you prefer to use `virtualenvwrapper` do the following:
         source /usr/local/bin/virtualenvwrapper.sh
 
 1. Update the current shell with `source ~/.bash_profile` or `source ~/.zshrc`
-
 1. Make the virtual environment
 
         mkvirtualenv mgit
 
+1. Enter the project environment
+        
+        workon mgit
 
 Refer to [this Stack Overflow](https://stackoverflow.com/a/25583193)
 for more info.
