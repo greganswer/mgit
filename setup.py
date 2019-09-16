@@ -11,6 +11,7 @@ setup(
     long_description=long_description,
     long_description_content_type="text/markdown",
     url="https://github.com/greganswer/mgit",
+    license="MIT",
     use_scm_version=True,
     setup_requires=["setuptools_scm"],
     packages=find_packages(),
