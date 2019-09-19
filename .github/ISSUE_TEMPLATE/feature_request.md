@@ -7,7 +7,7 @@ assignees: ''
 
 ---
 ```ghekin
-Feature: Automatically close GitHub issue
+Feature: 
   As a
   I can
   So that
