@@ -2,6 +2,8 @@ import click
 import subprocess
 import sys
 import requests
+import json
+import os
 from .git import *
 from .issue import Issue
 
@@ -9,17 +11,48 @@ from .issue import Issue
 class App:
     def __init__(self, log_file, verbose: bool):
         """
+        Initialize the app by validating the environment.
+
         :param log_file: The file where log output is sent.
         :param verbose: Determine if additional info should be logged.
         """
         self._log_file = log_file
         self._verbose = verbose
+        self._config_file_name = "mgit.json"
+        self._config = {}
+
+        # Validate there is a .git folder
+        if not os.path.isdir(".git"):
+            self.log("Please make sure you're in the parent directory for this repository.")
+            sys.exit(1)
+
+        # Validate there is an mgit.json file
+        if not os.path.isfile(self._config_file_name):
+            # Prompt the user for the issue-tracker-api value
+            config = {}
+            self.echo(
+                f"In order to retrieve the issue info we need the issue tracker API.\n"
+                f"Examples:\n"
+                f"    - GitHub: https://api.github.com/repos/:owner/:repo/issues\n"
+            )
+            config["issue_tracker_api"] = click.prompt(
+                "Enter the API URL for your issue tracker", type=str
+            )
+
+            # Create the file and store the values in it
+            with open(self._config_file_name, "w") as outfile:
+                json.dump(config, outfile)
 
     def branch(self, issue_id: str, base_branch: str):
         """ Create a branch using issue ID and title. """
         if not base_branch:
             base_branch = default_base_branch()
-        new_branch = self.get_issue(issue_id).branch_name()
+        try:
+            new_branch = self.get_issue(issue_id).branch_name()
+        except requests.exceptions.HTTPError as e:
+            self.log(e)
+            sys.exit(1)
+
         self.echo(
             f"This will create a branch off {self.green(base_branch)} named {self.green(new_branch)}."
         )
@@ -65,6 +98,13 @@ class App:
 
     # Helpers
 
+    def config(self, key: str):
+        """ Lazy load the config values from the config file. """
+        if not self._config:
+            with open(self._config_file_name) as infile:
+                self._config = json.load(infile)
+        return self._config[key]
+
     def execute(self, command: str):
         """ Execute a command on the terminal and log errors to log file. """
         if self._verbose:
@@ -97,10 +137,35 @@ class App:
 
     def get_issue(self, issue_id: str) -> Issue:
         """ Get Issue info by making an HTTP request. """
-        # TODO: Use config value to determine what API to request issue info from.
-        url = "http://www.mocky.io/v2/5d78f3f13000003c3f31f89e"
-        res = requests.get(url, headers={"content-type": "application/json"})
-        title = res.json()["fields"]["summary"]
+        url = f"{self.config('issue_tracker_api').strip('/')}/{issue_id}"
+        issue_tracker = ""
+        # TODO: Extract this to __init__. E.g: self.config('issue_tracker') or self.is_github()
+        if "github.com" in url:
+            issue_tracker = "GitHub"
+        auth = None
+        if issue_tracker == "GitHub" and os.getenv("MGIT_GITHUB_USERNAME"):
+            auth = (
+                (os.getenv("MGIT_GITHUB_USERNAME"), os.getenv("MGIT_GITHUB_API_TOKEN")),
+            )
+        try:
+            res = requests.get(
+                url, headers={"content-type": "application/json"}, auth=auth
+            )
+            res.raise_for_status()
+        except requests.exceptions.HTTPError as e:
+            # TODO: Determine how to get the ENV vars to persist.
+            # if '401 Client Error: Unauthorized' in str(e):
+            #      username = click.prompt(f'Please enter your {issue_tracker} username', type=str)
+            #      token = click.prompt(f'Please enter your {issue_tracker} API token', type=str, hide_input=True)
+            #      auth=(
+            #          os.getenv("MGIT_GITHUB_USERNAME"),
+            #          os.getenv("MGIT_GITHUB_API_TOKEN"),
+            #      ),
+            # else:
+            raise e
+        title = ""
+        if issue_tracker == "GitHub":
+            title = res.json()["title"]
         return Issue(issue_id, title)
 
     # Click Helpers
