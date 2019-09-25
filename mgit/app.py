@@ -23,7 +23,9 @@ class App:
 
         # Validate there is a .git folder
         if not os.path.isdir(".git"):
-            self.log("Please make sure you're in the parent directory for this repository.")
+            self.log(
+                "Please make sure you're in the parent directory for this repository."
+            )
             sys.exit(1)
 
         # Validate there is an mgit.json file
@@ -47,33 +49,32 @@ class App:
         """ Create a branch using issue ID and title. """
         if not base_branch:
             base_branch = default_base_branch()
-        try:
-            new_branch = self.get_issue(issue_id).branch_name()
-        except requests.exceptions.HTTPError as e:
-            self.log(e)
-            sys.exit(1)
+        new_branch = self.get_issue_or_abort(issue_id).branch_name()
 
         self.echo(
             f"This will create a branch off {self.green(base_branch)} named {self.green(new_branch)}."
         )
         self.confirm_or_abort()
-        self.execute_or_exit(f"git checkout {base_branch}")
-        self.execute_or_exit(f"git pull")
-        self.execute_or_exit(f"git checkout -b {new_branch}")
+        self.execute_or_abort(f"git checkout {base_branch}")
+        self.execute_or_abort(f"git pull")
+        self.execute_or_abort(f"git checkout -b {new_branch}")
 
-    def commit(self, message: str):
+    def commit(self, message: str, issue_id: str):
         """ Create a commit and push to GitHub. """
         if not message:
-            try:
-                message = Issue.from_branch(current_branch()).title()
-            except ValueError:
-                self.log(
-                    (
-                        f"The {current_branch()} branch does not contain an issue ID and title.\n"
-                        "Please use a different branch or provide the --message option to provide a custom message for this commit."
+            if issue_id:
+                message = self.get_issue_or_abort(issue_id).title()
+            else:
+                try:
+                    message = Issue.from_branch(current_branch()).title()
+                except ValueError:
+                    self.log(
+                        (
+                            f"The {current_branch()} branch does not contain an issue ID and title.\n"
+                            "Please use a different branch or provide the --message option to provide a custom message for this commit."
+                        )
                     )
-                )
-                sys.exit(1)
+                    sys.exit(1)
         self.echo(
             (
                 f"This will do the following:\n"
@@ -85,7 +86,11 @@ class App:
         )
         self.confirm_or_abort()
         self.safe_execute("git add .")
-        self.safe_execute(f"git commit -m {message}")
+        try:
+            subprocess.call(f'git commit -m "{message}"', shell=True)
+        except subprocess.CalledProcessError:
+            pass
+
         self.execute_first_success(
             "git push", f"git push --set-upstream origin {current_branch()}"
         )
@@ -118,11 +123,12 @@ class App:
         except subprocess.CalledProcessError:
             pass
 
-    def execute_or_exit(self, command: str):
-        """ Execute a command on the terminal and exit if error occurs. """
+    def execute_or_abort(self, command: str):
+        """ Execute a command on the terminal and abort if error occurs. """
         try:
             self.execute(command)
         except subprocess.CalledProcessError as e:
+            self.log(e)
             sys.exit(e.returncode)
 
     def execute_first_success(self, *commands):
@@ -167,6 +173,14 @@ class App:
         if issue_tracker == "GitHub":
             title = res.json()["title"]
         return Issue(issue_id, title)
+
+    def get_issue_or_abort(self, issue_id: str) -> Issue:
+        """ Get the issue by ID or exit the program. """
+        try:
+            return self.get_issue(issue_id)
+        except requests.exceptions.HTTPError as e:
+            self.log(e)
+            sys.exit(1)
 
     # Click Helpers
 

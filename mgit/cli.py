@@ -1,8 +1,9 @@
 import click
 import sys
-from .helpers import CustomMultiCommand
+from .helpers import CustomMultiCommand, Mutex
 from .app import App
 from ._version import __version__
+
 
 @click.group(
     cls=CustomMultiCommand, context_settings={"help_option_names": ["-h", "--help"]}
@@ -48,10 +49,23 @@ def branch(app, issue_id: str, base_branch: str):
     app.branch(issue_id, base_branch)
 
 
-@click.option("-m", "--message", help="The commit message.")
+@click.option(
+    "-m",
+    "--message",
+    help="The commit message.",
+    cls=Mutex,
+    not_required_if=["issue_id"],
+)
+@click.option(
+    "--issue-id",
+    "--id",
+    help="The ID of the issue being worked on.",
+    cls=Mutex,
+    not_required_if=["message"],
+)
 @cli.command()
 @click.pass_obj
-def commit(app, message: str):
+def commit(app, message: str, issue_id: str):
     """
     Create a commit and push to GitHub.
 
@@ -68,7 +82,7 @@ def commit(app, message: str):
         $ mgit commit
         $ mgit commit --message 'Update different from title'
     """
-    app.commit(message)
+    app.commit(message, issue_id)
 
 
 @cli.command()
