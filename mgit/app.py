@@ -5,6 +5,7 @@ import requests
 import json
 import os
 from .git import *
+from .config import Config
 from .issue import Issue
 
 
@@ -18,8 +19,7 @@ class App:
         """
         self._log_file = log_file
         self._verbose = verbose
-        self._config_file_name = "mgit.json"
-        self._config = {}
+        self._config = Config()
 
         # Validate there is a .git folder
         if not os.path.isdir(".git"):
@@ -28,22 +28,9 @@ class App:
             )
             sys.exit(1)
 
-        # Validate there is an mgit.json file
-        if not os.path.isfile(self._config_file_name):
-            # Prompt the user for the issue-tracker-api value
-            config = {}
-            self.echo(
-                f"In order to retrieve the issue info we need the issue tracker API.\n"
-                f"Examples:\n"
-                f"    - GitHub: https://api.github.com/repos/:owner/:repo/issues\n"
-            )
-            config["issue_tracker_api"] = click.prompt(
-                "Enter the API URL for your issue tracker", type=str
-            )
-
-            # Create the file and store the values in it
-            with open(self._config_file_name, "w") as outfile:
-                json.dump(config, outfile)
+        # Prompt the user for config values if the project mgit.json file does not exist.
+        if not os.path.isfile(Config.filename):
+            self._config_init()
 
     def branch(self, issue_id: str, base_branch: str):
         """ Create a branch using issue ID and title. """
@@ -79,7 +66,6 @@ class App:
             (
                 f"This will do the following:\n"
                 f"    - Add all uncommitted files\n"
-                f"    - Add all uncommitted files\n"
                 f'    - Create a commit with the message "{self.green(message)}"\n'
                 f"    - Push the changes to origin\n"
             )
@@ -103,12 +89,17 @@ class App:
 
     # Helpers
 
-    def config(self, key: str):
-        """ Lazy load the config values from the config file. """
-        if not self._config:
-            with open(self._config_file_name) as infile:
-                self._config = json.load(infile)
-        return self._config[key]
+    def _config_init(self):
+        """ Initialize the config values for this Git repository. """
+        self.echo(
+            f"In order to retrieve the issue info we need the issue tracker API.\n"
+            f"Examples:\n"
+            f"    - GitHub: https://api.github.com/repos/:owner/:repo/issues\n"
+        )
+        self._config.issue_tracker_api = click.prompt(
+            "Enter the API URL for your issue tracker", type=str
+        )
+        self._config.save()
 
     def execute(self, command: str):
         """ Execute a command on the terminal and log errors to log file. """
@@ -143,13 +134,10 @@ class App:
 
     def get_issue(self, issue_id: str) -> Issue:
         """ Get Issue info by making an HTTP request. """
-        url = f"{self.config('issue_tracker_api').strip('/')}/{issue_id}"
-        issue_tracker = ""
-        # TODO: Extract this to __init__. E.g: self.config('issue_tracker') or self.is_github()
-        if "github.com" in url:
-            issue_tracker = "GitHub"
+        url = f"{self._config.issue_tracker_api.strip('/')}/{issue_id}"
+        issue_tracker = self._config.issue_tracker()
         auth = None
-        if issue_tracker == "GitHub" and os.getenv("MGIT_GITHUB_USERNAME"):
+        if self._config.issue_tracker_is_github() and os.getenv("MGIT_GITHUB_USERNAME"):
             auth = (
                 (os.getenv("MGIT_GITHUB_USERNAME"), os.getenv("MGIT_GITHUB_API_TOKEN")),
             )
@@ -170,7 +158,7 @@ class App:
             # else:
             raise e
         title = ""
-        if issue_tracker == "GitHub":
+        if self._config.issue_tracker_is_github():
             title = res.json()["title"]
         return Issue(issue_id, title)
 
@@ -192,7 +180,7 @@ class App:
         """ Abort unless the user confirms that they wish to continue. """
         click.confirm("Do you wish to continue?", abort=True)
 
-    def confirm(self, message: str, abort=False):
+    def confirm(self, message="Do you wish to continue?", abort=False):
         """ Get user confirmation. """
         click.confirm(message, abort=abort)
 
