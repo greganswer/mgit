@@ -48,22 +48,28 @@ class App:
 
     def commit(self, message: str, issue_id: str):
         """ Create a commit and push to GitHub. """
+        issue = None
         if not message:
-            if issue_id:
-                message = self.get_issue_or_abort(issue_id).title()
-            else:
-                try:
-                    message = Issue.from_branch(current_branch()).title()
-                except ValueError:
-                    self.log(
-                        (
-                            f"The {current_branch()} branch does not contain an issue ID and title.\n"
-                            "Please use a different branch or provide the --message option to provide a custom message for this commit."
-                        )
+            try:
+                if issue_id:
+                    issue = self.get_issue_or_abort(issue_id)
+                else:
+                    issue = Issue.from_branch(current_branch())
+            except ValueError:
+                self.log(
+                    (
+                        # TODO: Extract to private method
+                        f"The {current_branch()} branch does not contain an issue ID and title.\n"
+                        "Please use a different branch or provide the --message option to provide a custom message for this commit."
                     )
-                    sys.exit(1)
+                )
+                sys.exit(1)
+            message = issue.title()
+        if issue and self._config.issue_tracker_is_github():
+            message += f"\n\nCloses #{issue.id}"
         self.echo(
             (
+                # TODO: Extract to private method
                 f"This will do the following:\n"
                 f"    - Add all uncommitted files\n"
                 f'    - Create a commit with the message "{self.green(message)}"\n'
@@ -180,9 +186,9 @@ class App:
         """ Abort unless the user confirms that they wish to continue. """
         click.confirm("Do you wish to continue?", abort=True)
 
-    def confirm(self, message="Do you wish to continue?", abort=False):
+    def confirm(self, message="Do you wish to continue?", abort=False) -> bool:
         """ Get user confirmation. """
-        click.confirm(message, abort=abort)
+        return click.confirm(message, abort=abort)
 
     def log(self, message: str):
         """ Log message to the log_file. """

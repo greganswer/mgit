@@ -40,6 +40,10 @@ class Issue:
                 break
         return Issue(id=id, summary=" ".join(summary), config=config)
 
+    @property
+    def id(self):
+        return self._id
+
     def branch_name(self) -> str:
         """
         Get the branch name from ID and title.
