@@ -1,14 +1,16 @@
 import inflection
+from .config import Config
 
 
 class Issue:
-    def __init__(self, id: str, summary: str):
+    def __init__(self, id: str, summary: str, config=Config()):
         """
         :param id: Issue ID.
         :param summary: Issue summary.
         """
         self._id = id.upper()
         self._summary = summary
+        self._config = config
 
     def __str__(self):
         """
@@ -21,15 +23,22 @@ class Issue:
         return f"{self._id}: {self.title()}"
 
     @classmethod
-    def from_branch(cls, name: str):
+    def from_branch(cls, name: str, config=Config()):
         """
         Create an Issue object from the name of a branch.
 
         >>> Issue.from_branch('jir-123-update-readme-file')
         JIR-123: Update Readme File
+        >>> Issue.from_branch('123-update-readme-file')
+        123: Update Readme File
         """
-        project, ticket_id, *summary = name.split("-")
-        return Issue(id=f"{project}-{ticket_id}", summary=" ".join(summary))
+        parts = name.split("-")
+        for index, part in enumerate(parts):
+            if part.isdigit():
+                id = "-".join(parts[: index + 1])
+                summary = " ".join(parts[index + 1 :])
+                break
+        return Issue(id=id, summary=" ".join(summary), config=config)
 
     def branch_name(self) -> str:
         """
@@ -53,6 +62,4 @@ class Issue:
 
     def url(self) -> str:
         """ Return the URL for this issue. """
-        # TODO: Change this to accommodate other issue trackers (GitHub, Trello, etc)
-        link = os.getenv("JIRA_SITE_URL", default=Issue.DEFAULT_SITE_URL).strip("/")
-        return f"{link}/browse/{self._id}"
+        return f"{self._config.issue_tracker_api}/{self._id}"

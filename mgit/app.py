@@ -10,7 +10,7 @@ from .issue import Issue
 
 
 class App:
-    def __init__(self, log_file, verbose: bool):
+    def __init__(self, log_file, verbose: bool, config=Config()):
         """
         Initialize the app by validating the environment.
 
@@ -19,7 +19,7 @@ class App:
         """
         self._log_file = log_file
         self._verbose = verbose
-        self._config = Config()
+        self._config = config
 
         # Validate there is a .git folder
         if not os.path.isdir(".git"):

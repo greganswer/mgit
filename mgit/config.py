@@ -13,9 +13,15 @@ class Config(dict):
         return self.get(key)
 
     def __setattr__(self, key, value):
-        """ Set the value and save to the JSON file. """
+        """
+        Set the value and save to the JSON file.
+
+        This also removes the trailing slash from URL values.
+        """
         if key not in Config.allowed_attributes:
             raise KeyError(f"'{key}' is not an allowed attribute")
+        if "http://" in value or "https://" in value:
+            value = value.strip("/")
         self[key] = value
         self.save()
 
