@@ -40,11 +40,13 @@ class Config(dict):
 
     # Issue tracker values
 
+    @property
     def issue_tracker(self) -> str:
         """ Get the name of the issue tracker provider. """
-        if self.issue_tracker_is_github():
+        if self.issue_tracker_is_github:
             return "GitHub"
         return ""
 
+    @property
     def issue_tracker_is_github(self) -> bool:
         return "github.com" in self.issue_tracker_api

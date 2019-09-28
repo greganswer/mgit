@@ -38,12 +38,13 @@ class Issue:
                 id = "-".join(parts[: index + 1])
                 summary = " ".join(parts[index + 1 :])
                 break
-        return Issue(id=id, summary=" ".join(summary), config=config)
+        return Issue(id=id, summary=summary, config=config)
 
     @property
     def id(self):
         return self._id
 
+    @property
     def branch_name(self) -> str:
         """
         Get the branch name from ID and title.
@@ -54,16 +55,25 @@ class Issue:
         """
         return inflection.parameterize(f"{self._id} {self._summary}")
 
+    @property
     def title(self) -> str:
         """
         Titleized the summary of the issue.
 
         >>> issue = Issue(summary='Update readme.md file')
-        >>> print(issue.title())
+        >>> print(issue.title)
         Update Readme.Md File
         """
         return inflection.titleize(self._summary)
 
+    @property
     def url(self) -> str:
-        """ Return the URL for this issue. """
+        """
+        Return the URL for this issue
+
+        >>> config = Config({"issue_tracker_api": "http://example.com/"})
+        >>> issue = Issue(id=7, config=config)
+        >>> print(issue.url)
+        http://example.com/7
+        """
         return f"{self._config.issue_tracker_api}/{self._id}"
