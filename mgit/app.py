@@ -4,6 +4,8 @@ import sys
 import requests
 import json
 import os
+import shlex
+import shutil
 from .git import *
 from .config import Config
 from .issue import Issue
@@ -36,8 +38,7 @@ class App:
         """ Create a branch using issue ID and title. """
         if not base_branch:
             base_branch = default_base_branch()
-        new_branch = self.get_issue_or_abort(issue_id).branch_name()
-
+        new_branch = self.get_issue_or_abort(issue_id).branch_name
         self.echo(
             f"This will create a branch off {self.green(base_branch)} named {self.green(new_branch)}."
         )
@@ -64,8 +65,8 @@ class App:
                     )
                 )
                 sys.exit(1)
-            message = issue.title()
-        if issue and self._config.issue_tracker_is_github():
+            message = issue.title
+        if issue and self._config.issue_tracker_is_github:
             message += f"\n\nCloses #{issue.id}"
         self.echo(
             (
@@ -92,6 +93,66 @@ class App:
 
     def pull_request(self, base_branch: str):
         """ Create a GitHub Pull Request for the specified branch. """
+        if not base_branch:
+            base_branch = default_base_branch()
+        issue = Issue.from_branch(current_branch())
+        title = message = issue.title
+        if issue and self._config.issue_tracker_is_github:
+            message += f"\n\nCloses #{issue.id}"
+        self.echo(
+            (
+                f"This will do the following:\n"
+                f"    - Add all uncommitted files\n"
+                f'    - Create a commit with the message "{self.green(message)}"\n'
+                f"    - Push the changes to origin\n"
+                f'    - Create a pull request to the {self.green(base_branch)} branch with the title "{self.green(title)}"\n'
+                f"    - Open the pull request in your web browser\n"
+            )
+        )
+        self.confirm_or_abort()
+        self.safe_execute("git add .")
+        try:
+            subprocess.call(f'git commit -m "{message}"', shell=True)
+        except subprocess.CalledProcessError:
+            pass
+        self.echo(
+            f"Would you like to update the {self.green(base_branch)} branch first and rebase your commits?"
+        )
+        if self.confirm():
+            # TODO: Extract to private method.
+            self.execute_or_abort(f"git checkout {base_branch}")
+            self.execute_or_abort(f"git pull")
+            self.execute_or_abort(f"git checkout -")
+            # NOTE: call is required in order for this to be interactive.
+            subprocess.call(shlex.split(f"git rebase -i {base_branch}"))
+            self.execute_first_success(
+                f"git push -f", f"git push --set-upstream origin {current_branch()}"
+            )
+        # TODO: Extract to private method.
+        body = f"""{title}
+
+### [{self._config.issue_tracker} ticket {issue.id}]({issue.url})
+
+### Screenshots
+
+### Sample API Requests
+
+### QA Steps
+
+### Checklist
+- [ ] Added tests
+- [ ] Check for typos
+- [ ] Updated CHANGELOG.md
+- [ ] Updated internal/external documentation
+        """
+        try:
+            assignee = self.execute("git config --global user.handle")
+        except subprocess.CalledProcessError:
+            assignee = ""
+        self.execute_hub_command(
+            f'hub pull-request -fpo -b {base_branch} -m "{body}" -a {assignee}'
+        )
+        self.safe_execute("git push")
 
     # Helpers
 
@@ -111,7 +172,9 @@ class App:
         """ Execute a command on the terminal and log errors to log file. """
         if self._verbose:
             self.log(f"Executing command -> {command}")
-        return subprocess.check_output(command.split(), stderr=self._log_file)
+        return subprocess.check_output(
+            shlex.split(command), stderr=self._log_file
+        ).decode("utf-8")
 
     def safe_execute(self, command: str):
         """ Execute a command on the terminal and ignore errors. """
@@ -136,14 +199,37 @@ class App:
             except subprocess.CalledProcessError:
                 pass
 
+    def execute_hub_command(self, command, abort=False):
+        """
+        Execute a command using the Hub CLI.
+
+        :param command: The command hub will execute.
+        :param abort: Whether or not the script should exit if the
+                      hub command fails.
+        """
+        if not shutil.which("hub"):
+            self.echo(
+                (
+                    "This script relies on GitHub's 'hub' command line tool.\n"
+                    "Visit https://github.com/github/hub to install it"
+                )
+            )
+            sys.exit(1)
+        try:
+            subprocess.call(command, shell=True)
+        except subprocess.CalledProcessError as e:
+            if abort:
+                self.log(e)
+                sys.exit(1)
+
     # Issue Helpers
 
     def get_issue(self, issue_id: str) -> Issue:
         """ Get Issue info by making an HTTP request. """
         url = f"{self._config.issue_tracker_api.strip('/')}/{issue_id}"
-        issue_tracker = self._config.issue_tracker()
+        issue_tracker = self._config.issue_tracker
         auth = None
-        if self._config.issue_tracker_is_github() and os.getenv("MGIT_GITHUB_USERNAME"):
+        if self._config.issue_tracker_is_github and os.getenv("MGIT_GITHUB_USERNAME"):
             auth = (
                 (os.getenv("MGIT_GITHUB_USERNAME"), os.getenv("MGIT_GITHUB_API_TOKEN")),
             )
@@ -164,7 +250,7 @@ class App:
             # else:
             raise e
         title = ""
-        if self._config.issue_tracker_is_github():
+        if self._config.issue_tracker_is_github:
             title = res.json()["title"]
         return Issue(issue_id, title)
 
