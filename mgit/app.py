@@ -8,11 +8,12 @@ import shlex
 import shutil
 from .git import *
 from .config import Config
+from .translator import Translator
 from .issue import Issue
 
 
 class App:
-    def __init__(self, log_file, verbose: bool, config=Config()):
+    def __init__(self, log_file, verbose: bool, config=Config(), translator=Translator()):
         """
         Initialize the app by validating the environment.
 
@@ -22,12 +23,11 @@ class App:
         self._log_file = log_file
         self._verbose = verbose
         self._config = config
+        self._translator = translator
 
         # Validate there is a .git folder
         if not os.path.isdir(".git"):
-            self.log(
-                "Please make sure you're in the parent directory for this repository."
-            )
+            self.log(self._translator.invalid_git_directory())
             sys.exit(1)
 
         # Prompt the user for config values if the project mgit.json file does not exist.
@@ -38,10 +38,9 @@ class App:
         """ Create a branch using issue ID and title. """
         if not base_branch:
             base_branch = default_base_branch()
+
         new_branch = self.get_issue_or_abort(issue_id).branch_name
-        self.echo(
-            f"This will create a branch off {self.green(base_branch)} named {self.green(new_branch)}."
-        )
+        self.echo(self._translator.create_branch_warning())
         self.confirm_or_abort()
         self.execute_or_abort(f"git checkout {base_branch}")
         self.execute_or_abort(f"git pull")
@@ -58,25 +57,15 @@ class App:
                     issue = Issue.from_branch(current_branch())
             except ValueError:
                 self.log(
-                    (
-                        # TODO: Extract to private method
-                        f"The {current_branch()} branch does not contain an issue ID and title.\n"
-                        "Please use a different branch or provide the --message option to provide a custom message for this commit."
-                    )
+                    self._translator.branch_has_no_issue_id(current_branch())
                 )
                 sys.exit(1)
             message = issue.title
+
         if issue and self._config.issue_tracker_is_github:
-            message += f"\n\nCloses #{issue.id}"
-        self.echo(
-            (
-                # TODO: Extract to private method
-                f"This will do the following:\n"
-                f"    - Add all uncommitted files\n"
-                f'    - Create a commit with the message "{self.green(message)}"\n'
-                f"    - Push the changes to origin\n"
-            )
-        )
+            message += self._translator.closes_issue_id(issue.id)
+
+        self.echo(self._translator.commit_warning(message))
         self.confirm_or_abort()
         self.safe_execute("git add .")
         try:
@@ -95,29 +84,22 @@ class App:
         """ Create a GitHub Pull Request for the specified branch. """
         if not base_branch:
             base_branch = default_base_branch()
+
         issue = Issue.from_branch(current_branch())
         title = message = issue.title
         if issue and self._config.issue_tracker_is_github:
             message += f"\n\nCloses #{issue.id}"
-        self.echo(
-            (
-                f"This will do the following:\n"
-                f"    - Add all uncommitted files\n"
-                f'    - Create a commit with the message "{self.green(message)}"\n'
-                f"    - Push the changes to origin\n"
-                f'    - Create a pull request to the {self.green(base_branch)} branch with the title "{self.green(title)}"\n'
-                f"    - Open the pull request in your web browser\n"
-            )
-        )
+
+        self.echo(self._translator.pull_request_warning(
+            message, base_branch, title))
         self.confirm_or_abort()
         self.safe_execute("git add .")
         try:
             subprocess.call(f'git commit -m "{message}"', shell=True)
         except subprocess.CalledProcessError:
             pass
-        self.echo(
-            f"Would you like to update the {self.green(base_branch)} branch first and rebase your commits?"
-        )
+
+        self.echo(self._translator.update_base_branch_confirmation(base_branch))
         if self.confirm():
             # TODO: Extract to private method.
             self.execute_or_abort(f"git checkout {base_branch}")
@@ -128,23 +110,8 @@ class App:
             self.execute_first_success(
                 f"git push -f", f"git push --set-upstream origin {current_branch()}"
             )
-        # TODO: Extract to private method.
-        body = f"""{title}
-
-### [{self._config.issue_tracker} ticket {issue.id}]({issue.url})
-
-### Screenshots
-
-### Sample API Requests
-
-### QA Steps
-
-### Checklist
-- [ ] Added tests
-- [ ] Check for typos
-- [ ] Updated CHANGELOG.md
-- [ ] Updated internal/external documentation
-        """
+        body = self._translator.pull_request_body(
+            title, self._config.issue_tracker, issue.id, issue.url)
         try:
             assignee = self.execute("git config --global user.handle")
         except subprocess.CalledProcessError:
@@ -158,13 +125,9 @@ class App:
 
     def _config_init(self):
         """ Initialize the config values for this Git repository. """
-        self.echo(
-            f"In order to retrieve the issue info we need the issue tracker API.\n"
-            f"Examples:\n"
-            f"    - GitHub: https://api.github.com/repos/:owner/:repo/issues\n"
-        )
+        self.echo(self._translator.init_issue_tracker_api())
         self._config.issue_tracker_api = click.prompt(
-            "Enter the API URL for your issue tracker", type=str
+            self._translator.issue_tracker_api_prompt(), type=str
         )
         self._config.save()
 
@@ -199,39 +162,32 @@ class App:
             except subprocess.CalledProcessError:
                 pass
 
-    def execute_hub_command(self, command, abort=False):
+    def execute_hub_command(self, command):
         """
         Execute a command using the Hub CLI.
 
-        :param command: The command hub will execute.
-        :param abort: Whether or not the script should exit if the
-                      hub command fails.
+        : param command: The command hub will execute.
         """
-        if not shutil.which("hub"):
-            self.echo(
-                (
-                    "This script relies on GitHub's 'hub' command line tool.\n"
-                    "Visit https://github.com/github/hub to install it"
-                )
-            )
+        hub_installed = shutil.which("hub")
+        if not hub_installed:
+            self.echo(self._translator.hub_cli_missing())
             sys.exit(1)
         try:
             subprocess.call(command, shell=True)
         except subprocess.CalledProcessError as e:
-            if abort:
-                self.log(e)
-                sys.exit(1)
+            self.log(e)
+            sys.exit(1)
 
     # Issue Helpers
 
     def get_issue(self, issue_id: str) -> Issue:
         """ Get Issue info by making an HTTP request. """
         url = f"{self._config.issue_tracker_api.strip('/')}/{issue_id}"
-        issue_tracker = self._config.issue_tracker
         auth = None
         if self._config.issue_tracker_is_github and os.getenv("MGIT_GITHUB_USERNAME"):
             auth = (
-                (os.getenv("MGIT_GITHUB_USERNAME"), os.getenv("MGIT_GITHUB_API_TOKEN")),
+                (os.getenv("MGIT_GITHUB_USERNAME"),
+                 os.getenv("MGIT_GITHUB_API_TOKEN")),
             )
         try:
             res = requests.get(
@@ -240,7 +196,9 @@ class App:
             res.raise_for_status()
         except requests.exceptions.HTTPError as e:
             # TODO: Determine how to get the ENV vars to persist.
+            # issue_tracker = self._config.issue_tracker
             # if '401 Client Error: Unauthorized' in str(e):
+            # TODO: Extract method
             #      username = click.prompt(f'Please enter your {issue_tracker} username', type=str)
             #      token = click.prompt(f'Please enter your {issue_tracker} API token', type=str, hide_input=True)
             #      auth=(
@@ -279,17 +237,3 @@ class App:
     def log(self, message: str):
         """ Log message to the log_file. """
         click.echo(message, file=self._log_file)
-
-    # Colors
-
-    def blue(self, message, bold=False):
-        return click.style(message, fg="blue", bold=bold)
-
-    def green(self, message, bold=False):
-        return click.style(message, fg="green", bold=bold)
-
-    def red(self, message, bold=False):
-        return click.style(message, fg="red", bold=bold)
-
-    def yellow(self, message, bold=False):
-        return click.style(message, fg="yellow", bold=bold)

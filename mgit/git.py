@@ -3,7 +3,8 @@ import subprocess
 
 def current_branch() -> str:
     """ Get current branch for the current Git repo. """
-    output = subprocess.check_output(["git", "rev-parse", "--abbrev-ref", "HEAD"])
+    output = subprocess.check_output(
+        ["git", "rev-parse", "--abbrev-ref", "HEAD"])
     return str(output, "utf-8").strip("\n")
 
 
