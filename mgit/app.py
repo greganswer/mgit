@@ -101,27 +101,31 @@ class App:
 
         self.echo(self._translator.update_base_branch_confirmation(base_branch))
         if self.confirm():
-            # TODO: Extract to private method.
-            self.execute_or_abort(f"git checkout {base_branch}")
-            self.execute_or_abort(f"git pull")
-            self.execute_or_abort(f"git checkout -")
-            # NOTE: call is required in order for this to be interactive.
-            subprocess.call(shlex.split(f"git rebase -i {base_branch}"))
-            self.execute_first_success(
-                f"git push -f", f"git push --set-upstream origin {current_branch()}"
-            )
+            self.rebase_off_branch(base_branch)
+
         body = self._translator.pull_request_body(
             title, self._config.issue_tracker, issue.id, issue.url)
         try:
             assignee = self.execute("git config --global user.handle")
         except subprocess.CalledProcessError:
             assignee = ""
+
         self.execute_hub_command(
             f'hub pull-request -fpo -b {base_branch} -m "{body}" -a {assignee}'
         )
         self.safe_execute("git push")
 
     # Helpers
+
+    def rebase_off_branch(self, branch):
+        self.execute_or_abort(f"git checkout {branch}")
+        self.execute_or_abort(f"git pull")
+        self.execute_or_abort(f"git checkout -")
+        # NOTE: call is required in order for this to be interactive.
+        subprocess.call(shlex.split(f"git rebase -i {branch}"))
+        self.execute_first_success(
+            f"git push -f", f"git push --set-upstream origin {current_branch()}"
+        )
 
     def _config_init(self):
         """ Initialize the config values for this Git repository. """
