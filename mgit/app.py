@@ -27,8 +27,7 @@ class App:
 
         # Validate there is a .git folder
         if not os.path.isdir(".git"):
-            self.log(self._translator.invalid_git_directory())
-            sys.exit(1)
+            self.abort(self._translator.invalid_git_directory())
 
         # Prompt the user for config values if the project mgit.json file does not exist.
         if not os.path.isfile(Config.filename):
@@ -56,10 +55,9 @@ class App:
                 else:
                     issue = Issue.from_branch(current_branch())
             except ValueError:
-                self.log(
+                self.abort(
                     self._translator.branch_has_no_issue_id(current_branch())
                 )
-                sys.exit(1)
             message = issue.title
 
         if issue and self._config.issue_tracker_is_github:
@@ -68,6 +66,9 @@ class App:
         self.echo(self._translator.commit_warning(message))
         self.confirm_or_abort()
         self.safe_execute("git add .")
+        # TODO: Extract to git package
+        # TODO: Try to replace with the following:
+        #       self.execute(f'git commit -m "{message}"', abort=False, shell=True) # TODO: remove shell=True
         try:
             subprocess.call(f'git commit -m "{message}"', shell=True)
         except subprocess.CalledProcessError:
@@ -94,6 +95,9 @@ class App:
             message, base_branch, title))
         self.confirm_or_abort()
         self.safe_execute("git add .")
+        # TODO: Extract to git package
+        # TODO: Try to replace with the following:
+        #       self.execute(f'git commit -m "{message}"', abort=False, shell=True) # TODO: remove shell=True
         try:
             subprocess.call(f'git commit -m "{message}"', shell=True)
         except subprocess.CalledProcessError:
@@ -111,7 +115,7 @@ class App:
             assignee = ""
 
         self.execute_hub_command(
-            f'hub pull-request -fpo -b {base_branch} -m "{body}" -a {assignee}'
+            f'pull-request -fpo -b {base_branch} -m "{body}" -a {assignee}'
         )
         self.safe_execute("git push")
 
@@ -121,6 +125,7 @@ class App:
         self.execute_or_abort(f"git checkout {branch}")
         self.execute_or_abort(f"git pull")
         self.execute_or_abort(f"git checkout -")
+
         # NOTE: call is required in order for this to be interactive.
         subprocess.call(shlex.split(f"git rebase -i {branch}"))
         self.execute_first_success(
@@ -134,6 +139,25 @@ class App:
             self._translator.issue_tracker_api_prompt(), type=str
         )
         self._config.save()
+
+    # TODO: Try to use this method instead of the 3 below.
+    # TODO: Rename to `execute` once ready.
+    def execute_prime(self, command: str, abort=True):
+        """ Execute a command on the terminal and log errors to log file. """
+        try:
+            if self._verbose:
+                self.log(f"Executing command -> {command}")
+            return subprocess.check_output(
+                shlex.split(command), stderr=self._log_file
+            ).decode("utf-8")
+        except subprocess.CalledProcessError as e:
+            if abort:
+                self.abort(e, e.returncode)
+
+    # TODO: replace aborts with this
+    def abort(self, message, code=1):
+        self.log(message)
+        sys.exit(code)
 
     def execute(self, command: str):
         """ Execute a command on the terminal and log errors to log file. """
@@ -170,20 +194,19 @@ class App:
         """
         Execute a command using the Hub CLI.
 
-        : param command: The command hub will execute.
+        :param command: The command hub will execute.
         """
         hub_installed = shutil.which("hub")
         if not hub_installed:
-            self.echo(self._translator.hub_cli_missing())
-            sys.exit(1)
+            self.abort(self._translator.hub_cli_missing())
         try:
-            subprocess.call(command, shell=True)
+            subprocess.call(f'hub {command}', shell=True)
         except subprocess.CalledProcessError as e:
-            self.log(e)
-            sys.exit(1)
+            self.abort(e, e.returncode)
 
     # Issue Helpers
 
+    # TODO: add abort=True and remove function below.
     def get_issue(self, issue_id: str) -> Issue:
         """ Get Issue info by making an HTTP request. """
         url = f"{self._config.issue_tracker_api.strip('/')}/{issue_id}"
@@ -194,9 +217,8 @@ class App:
                  os.getenv("MGIT_GITHUB_API_TOKEN")),
             )
         try:
-            res = requests.get(
-                url, headers={"content-type": "application/json"}, auth=auth
-            )
+            headers = {"content-type": "application/json"}
+            res = requests.get(url, headers=headers, auth=auth)
             res.raise_for_status()
         except requests.exceptions.HTTPError as e:
             # TODO: Determine how to get the ENV vars to persist.
@@ -230,6 +252,7 @@ class App:
         """ Echo a message to the terminal. """
         click.echo(message)
 
+    # TODO: Remove this duplicate method
     def confirm_or_abort(self):
         """ Abort unless the user confirms that they wish to continue. """
         click.confirm("Do you wish to continue?", abort=True)
