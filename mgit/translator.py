@@ -1,5 +1,6 @@
 import click
 
+# TODO: Extract to JSON file.
 MESSAGES = {
     "create_branch_warning": "This will create a branch off {base_branch} named {new_branch}.",
     "issue_tracker_api_prompt": "Enter the API URL for your issue tracker",
