@@ -1,7 +1,24 @@
 import click
 
+MESSAGES = {
+    "create_branch_warning": "This will create a branch off {base_branch} named {new_branch}.",
+    "issue_tracker_api_prompt": "Enter the API URL for your issue tracker",
+}
+
 
 class Translator:
+    def __getattr__(self, name):
+        def method_missing(**kwargs):
+            """
+            Get the value in MESSAGES based on the method name.
+
+            >>> t = Translator()
+            >>> t.issue_tracker_api_prompt()
+            Enter the API URL for your issue tracker
+            """
+            return MESSAGES[name].format(**kwargs)
+        return method_missing
+
     def init_issue_tracker_api(self):
         return f"""In order to retrieve the issue info we need the issue tracker API. Examples:
     - GitHub: https://api.github.com/repos/:owner/:repo/issues"""
@@ -17,9 +34,12 @@ Visit https://github.com/github/hub to install it"""
         return "Please make sure you're in the parent directory for this repository."
 
     def create_branch_warning(self, base_branch, new_branch):
+        # return MESSAGES["create_branch_warning"].format(self.green(base_branch), self.green(new_branch))
         return f"This will create a branch off {self.green(base_branch)} named {self.green(new_branch)}."
 
     def branch_has_no_issue_id(self, current_branch):
+        # TODO: Add MESSAGES constant dictionary with
+        # return MESSAGES["branch_has_no_issue_id"].format(current_branch)
         return f"""The {current_branch} branch does not contain an issue ID and title.
 Please use a different branch or provide the --message option to provide a custom message for this commit."""
 
@@ -27,6 +47,9 @@ Please use a different branch or provide the --message option to provide a custo
         return f"\n\nCloses #{id}"
 
     def commit_warning(self, message):
+        # TODO:
+        # return MESSAGES["commit_warning"].format(self.green(message))
+
         return f"""This will do the following:
     - Add all uncommitted files
     - Create a commit with the message "{self.green(message)}"
