@@ -1,6 +1,15 @@
 import subprocess
+import os
+
+# TODO: Add proper docstring format
+#       ref: https://realpython.com/documenting-python-code/#docstring-formats
 
 DEFAULT_BASE_BRANCHES = ["dev", "develop", "development", "master"]
+
+
+# def initialized() -> bool:
+#     """ Determine if current directory is a Git repo. """
+#     return os.path.isdir(".git")
 
 
 def current_branch() -> str:
@@ -26,3 +35,61 @@ def branch_exists(branch: str) -> bool:
         return True
     except subprocess.CalledProcessError:
         return False
+
+
+# def new_branch_off(base_branch: str, new_branch: str):
+#     """ Create a new branch off a base branch.
+
+#     Raises
+#     ------
+#     subprocess.CalledProcessError
+#         If any of the commands fail.
+#     """
+#     subprocess.call(["git", "checkout", base_branch])
+#     subprocess.call(["git", "pull"])
+#     subprocess.call(["git", "checkout", "-b", new_branch])
+
+
+# def rebase_off_branch(base_branch: str):
+#     """ Rebase off a base branch.
+
+#     Raises
+#     ------
+#     subprocess.CalledProcessError
+#         If any of the commands fail.
+#     """
+#     subprocess.call(["git", "checkout", base_branch])
+#     subprocess.call(["git", "pull"])
+#     subprocess.call(["git", "checkout", "-"])
+#     subprocess.call(["git", "rebase", "-i", base_branch])
+
+
+# def commit_all(message: str):
+#     """ Add all files and commit. Ignores errors. """
+#     execute_call(["git", "add", "."], abort=False)
+#     try:
+#         subprocess.call(f'git commit -m "{message}"', shell=True)
+#     except subprocess.CalledProcessError:
+#         pass
+
+
+# def push(branch: str):
+#     """ Push the changes to the remote branch. Ignores errors. """
+#     execute_call(["git", "push", "-f"], abort=False)
+#     execute_call(["git", "push", "--set-upstream", "origin", branch], abort=False)
+
+
+# # TODO: Determine where to put this duplicate code, needed in `app.py`.
+# def execute_call(command, abort=True):
+#     """ Execute `subprocess.call`.
+
+#     Raises
+#     ------
+#     subprocess.CalledProcessError
+#         If the commands fail and `abort` is True.
+#     """
+#     try:
+#         subprocess.call(command)
+#     except subprocess.CalledProcessError as e:
+#         if abort:
+#             raise e

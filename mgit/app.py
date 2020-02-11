@@ -6,7 +6,8 @@ import json
 import os
 import shlex
 import shutil
-from .git import *
+
+import git
 from .config import Config
 from .translator import Translator
 from .issue import Issue

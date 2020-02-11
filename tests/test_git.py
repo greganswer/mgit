@@ -4,7 +4,7 @@ from subprocess import CalledProcessError as ProcessError
 
 from mgit import git
 
-
+# TODO: Add descriptions for each function.
 class GitTestCase(unittest.TestCase):
     @mock.patch("mgit.git.subprocess.check_output")
     def test_current_branch(self, mock_check_output):
@@ -48,6 +48,9 @@ class GitTestCase(unittest.TestCase):
             mock_branch_exists.side_effect = side_effect
             actual = git.default_base_branch()
             self.assertEqual(branch, actual)
+
+    def test_commit(self):
+        pass
 
 
 # Run the tests
