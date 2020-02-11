@@ -13,7 +13,9 @@ from .issue import Issue
 
 
 class App:
-    def __init__(self, log_file, verbose: bool, config=Config(), translator=Translator()):
+    def __init__(
+        self, log_file, verbose: bool, config=Config(), translator=Translator()
+    ):
         """
         Initialize the app by validating the environment.
 
@@ -55,9 +57,7 @@ class App:
                 else:
                     issue = Issue.from_branch(current_branch())
             except ValueError:
-                self.abort(
-                    self._translator.branch_has_no_issue_id(current_branch())
-                )
+                self.abort(self._translator.branch_has_no_issue_id(current_branch()))
             message = issue.title
 
         if issue and self._config.issue_tracker_is_github:
@@ -91,8 +91,7 @@ class App:
         if issue and self._config.issue_tracker_is_github:
             message += f"\n\nCloses #{issue.id}"
 
-        self.echo(self._translator.pull_request_warning(
-            message, base_branch, title))
+        self.echo(self._translator.pull_request_warning(message, base_branch, title))
         self.confirm_or_abort()
         self.safe_execute("git add .")
         # TODO: Extract to git package
@@ -108,7 +107,8 @@ class App:
             self.rebase_off_branch(base_branch)
 
         body = self._translator.pull_request_body(
-            title, self._config.issue_tracker, issue.id, issue.url)
+            title, self._config.issue_tracker, issue.id, issue.url
+        )
         try:
             assignee = self.execute("git config --global user.handle")
         except subprocess.CalledProcessError:
@@ -200,7 +200,7 @@ class App:
         if not hub_installed:
             self.abort(self._translator.hub_cli_missing())
         try:
-            subprocess.call(f'hub {command}', shell=True)
+            subprocess.call(f"hub {command}", shell=True)
         except subprocess.CalledProcessError as e:
             self.abort(e, e.returncode)
 
@@ -213,8 +213,7 @@ class App:
         auth = None
         if self._config.issue_tracker_is_github and os.getenv("MGIT_GITHUB_USERNAME"):
             auth = (
-                (os.getenv("MGIT_GITHUB_USERNAME"),
-                 os.getenv("MGIT_GITHUB_API_TOKEN")),
+                (os.getenv("MGIT_GITHUB_USERNAME"), os.getenv("MGIT_GITHUB_API_TOKEN")),
             )
         try:
             headers = {"content-type": "application/json"}

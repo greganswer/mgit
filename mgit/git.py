@@ -1,5 +1,7 @@
 import subprocess
 
+DEFAULT_BASE_BRANCHES = ["dev", "develop", "development", "master"]
+
 
 def current_branch() -> str:
     """ Get current branch for the current Git repo. """
@@ -9,8 +11,7 @@ def current_branch() -> str:
 
 def default_base_branch() -> str:
     """ Return the default base branch for the current Git repo. """
-    branches = ["dev", "develop", "development", "master"]
-    for branch in branches:
+    for branch in DEFAULT_BASE_BRANCHES:
         if branch_exists(branch):
             return branch
 

@@ -1,6 +1,6 @@
 import unittest
 import mock
-import subprocess
+from subprocess import CalledProcessError as ProcessError
 
 from mgit import git
 
@@ -16,23 +16,38 @@ class GitTestCase(unittest.TestCase):
         mock_check_output.assert_called_with(args)
         self.assertEqual("my_branch_name", actual)
 
-    # @mock.patch("mgit.git.subprocess.check_call")
-    # def test_branch_exists(self, mock_check_call):
-    #     mock_check_call.side_effect = subprocess.CalledProcessError
-    #     with self.assertRaises(subprocess.CalledProcessError):
-    #         branch = "fake_branch"
-    #         actual = git.branch_exists(branch)
-    #         args = ["git", "rev-parse", "--quiet", "--verify", branch]
-    #         mock_check_call.assert_called_once()
-    #         self.assertFalse(actual)
+    @mock.patch("mgit.git.subprocess.check_call")
+    def test_branch_exists_true(self, mock_check_call):
+        branch = "real_branch"
+        actual = git.branch_exists(branch)
 
-    #     branch = "master"
-    #     actual = git.branch_exists(branch)
-    #     args = ["git", "rev-parse", "--quiet", "--verify", branch]
-    #     # mock_check_call.assert_called_with(
-    #     #     args, stdout=subprocess.DEVNULL
-    #     # )
-    #     self.assertTrue(actual)
+        args = ["git", "rev-parse", "--quiet", "--verify", branch]
+        mock_check_call.assert_called_with(args, stdout=subprocess.DEVNULL)
+        self.assertTrue(actual)
+
+    @mock.patch("mgit.git.subprocess.check_call")
+    def test_branch_exists_false(self, mock_check_call):
+        branch = "fake_branch"
+        args = ["git", "rev-parse", "--quiet", "--verify", branch]
+        cmd = "".join(args)
+        mock_check_call.side_effect = ProcessError(returncode=17, cmd=cmd)
+        actual = git.branch_exists(branch)
+
+        mock_check_call.assert_called_with(args, stdout=subprocess.DEVNULL)
+        self.assertFalse(actual)
+
+    @mock.patch("mgit.git.branch_exists")
+    def test_default_base_branch(self, mock_branch_exists):
+        branches = ["dev", "develop", "development", "master"]
+        self.assertEqual(branches, git.DEFAULT_BASE_BRANCHES)
+        for branch in git.DEFAULT_BASE_BRANCHES:
+
+            def side_effect(arg):
+                return True if arg == branch else False
+
+            mock_branch_exists.side_effect = side_effect
+            actual = git.default_base_branch()
+            self.assertEqual(branch, actual)
 
 
 # Run the tests
