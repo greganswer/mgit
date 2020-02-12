@@ -1,15 +1,15 @@
 # mgit
 
-- [mgit](#mgit)
-  - [Installation](#installation)
-  - [Usage](#usage)
-  - [Development](#development)
-    - [Virtual environment](#virtual-environment)
-      - [standard](#standard)
-      - [virtualenvwrapper](#virtualenvwrapper)
-  - [Contributing](#contributing)
-  - [License](#license)
-  - [Code of Conduct](#code-of-conduct)
+- [Installation](#installation)
+- [Usage](#usage)
+- [Development](#development)
+  - [Virtual environment setup](#virtual-environment-setup)
+    - [standard](#standard)
+    - [virtualenvwrapper](#virtualenvwrapper)
+- [Testing](#testing)
+- [Contributing](#contributing)
+- [License](#license)
+- [Code of Conduct](#code-of-conduct)
 
 Run Git work flows for GitHub with issue tracking ticket numbers from issue tracking services like Jira.
 
@@ -94,7 +94,7 @@ mgit tag
 
 ## Development
 
-### Virtual environment
+### Virtual environment setup
 
 Make sure you have [Python 3.7.4](https://www.python.org/downloads) installed.
 
@@ -150,6 +150,22 @@ If you prefer to use `virtualenvwrapper` do the following:
 
 Refer to [this Stack Overflow](https://stackoverflow.com/a/25583193)
 for more info.
+
+## Testing
+
+First install the [Python Click package](https://click.palletsprojects.com/en/7.x/) globally
+
+To run tests, execute the following command from the root directory:
+
+    bin/test
+  
+To automatically run tests after updating files:
+
+    bin/test watch
+
+For more info run:
+
+    bin/test --help
 
 ## Contributing
 

@@ -79,7 +79,7 @@ def branch_exists(branch: str) -> bool:
 #     execute_call(["git", "push", "--set-upstream", "origin", branch], abort=False)
 
 
-# # TODO: Determine where to put this duplicate code, needed in `app.py`.
+# # TODO: Extract Duplicate Function
 # def execute_call(command, abort=True):
 #     """ Execute `subprocess.call`.
 

@@ -1,4 +1,4 @@
-import click
+import click  # https://click.palletsprojects.com/en/7.x/
 
 # TODO: Extract to JSON file.
 MESSAGES = {
@@ -18,6 +18,7 @@ class Translator:
             Enter the API URL for your issue tracker
             """
             return MESSAGES[name].format(**kwargs)
+
         return method_missing
 
     def init_issue_tracker_api(self):

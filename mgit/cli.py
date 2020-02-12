@@ -1,4 +1,4 @@
-import click
+import click  # https://click.palletsprojects.com/en/7.x/
 import sys
 from .helpers import CustomMultiCommand, Mutex
 from .app import App

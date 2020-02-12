@@ -1,64 +1,105 @@
-#!/usr/bin/env bash
+#!/usr/bin/env python3
 
-# When the `--debug` flag is passed to this script, display the file and line
-# number for each command that executed.
-[[ "${*}" =~ --debug ]] && set -o xtrace
-PS4='+ ${BASH_SOURCE}:${LINENO} '
+import click  # https://click.palletsprojects.com/en/7.x/
+import sys
+import subprocess
+import os
 
-set -o pipefail # `error here | true` will fail if this is enabled.
-set -o errexit # Exit the script when an error occurs.
 
-# Set magic variables for current file & dir
-__dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd -L)"
+# TODO: Convert to string if shell=True requires it
+# Ref: https://docs.python.org/3.7/library/unittest.html#command-line-interface
+TEST_COMMAND = ["python3", "-m", "unittest", "tests/**.py"]
+INITIAL_DIRECTORY = os.getcwd()
+CURRENT_FILE_DIR = os.path.dirname(os.path.realpath(__file__))
 
-is_watch_mode=0
-is_cover_mode=0
 
-main() {
-  handle_options "$@"
-  # TODO: Find a way to avoid changing directories
-  cd "${__dir}/../"
-  if (($is_watch_mode)) && command -v nodemon > /dev/null; then
-    printf "Watching python files...\n"
-    # Ref: https://github.com/remy/nodemon
-    nodemon --delay 2 --ext py --exec python3 -m unittest tests/**.py
-  else
-    python3 -m unittest tests/**.py
-  fi
-  # TODO: Find a way to avoid changing directories
-  cd -
+class App:
+    def __init__(self, log_file, verbose: bool):
+        self.log_file = log_file
+        self.verbose = verbose
 
-  # (($is_cover_mode)) && go tool cover -html=coverage.out
-}
 
-# TODO: Fill this in
-# Show the usage for this script
-usage() {
-  :
-}
+@click.group(
+    invoke_without_command=True,
+    context_settings={"help_option_names": ["-h", "--help"]},
+)
+@click.option(
+    "--log-file",
+    "-l",
+    type=click.File("w"),
+    default=sys.stderr,
+    show_default="stderr",
+    help="File to log errors and warnings.",
+)
+@click.option("--verbose", "-v", is_flag=True, help="Enable verbose mode.")
+@click.pass_context
+def cli(ctx, verbose, log_file, verbose):
+    """
+    Run tests for this project.
+    """
+    ctx.obj = App(log_file=log_file, verbose=verbose)
 
-# Process the options that are passed to this script
-#
-# Arguments:
-#     $@ - Options passed into this script
-#
-# Examples:
-#     $ handle_options $@
+    cd_project_root()
+    command = TEST_COMMAND
+    if verbose:
+        command.append("-v")
 
-# References:
-#     - https://natelandau.com/boilerplate-shell-script-template/
-#     - https://mywiki.wooledge.org/BashFAQ/035
-handle_options() {
-  while [[ -n "$1" ]]; do
-    case $1 in
-      --debug       ) ;; # Prevent `Unknown option` failure.
-      -h | --help   ) usage && exit;;
-      watch         ) is_watch_mode=1;;
-      cover         ) is_cover_mode=1;;
-      *             ) fatal "Unknown option: ${1}";;
-    esac
-    shift
-  done
-}
+    execute_call(" ".join(command), shell=True, verbose=verbose)
+    os.chdir(INITIAL_DIRECTORY)
 
-main "$@"
+
+@cli.command()
+@click.option("--verbose", "-v", is_flag=True, help="Enable verbose mode.")
+@click.pass_obj
+def watch(app, verbose):
+    """
+    Automatically run tests after updating files
+
+    This depends on nodemon JS
+    Ref: https://github.com/remy/nodemon
+    """
+    click.echo("Watching python files...\n")
+    watch_command = [
+        "nodemon",
+        "--delay",
+        "2",
+        "--ext",
+        "py",
+        "--exec",
+    ]
+    cd_project_root()
+    # TODO: Clean this up
+    command = watch_command + TEST_COMMAND
+    command = " ".join(command)
+    if verbose:
+        command = " ".join(watch_command) + ' "python3 -m unittest -v tests/**.py"'
+
+    execute_call(command, shell=True, verbose=verbose)
+    os.chdir(INITIAL_DIRECTORY)
+
+
+def cd_project_root():
+    os.chdir(os.path.dirname(CURRENT_FILE_DIR))
+
+
+# TODO: Extract Duplicate Function
+def execute_call(command, abort=True, shell=False, verbose=False):
+    """ Execute `subprocess.call`.
+
+    Raises
+    ------
+    subprocess.CalledProcessError
+        If the commands fail and `abort` is True.
+    """
+    try:
+        if verbose:
+            click.echo(command)
+        subprocess.call(command, shell=shell)
+    except subprocess.CalledProcessError as e:
+        if abort:
+            click.echo(e)
+            sys.exit(e.returncode)
+
+
+if __name__ == "__main__":
+    cli()
