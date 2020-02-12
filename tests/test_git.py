@@ -1,6 +1,7 @@
 import unittest
 import mock
 from subprocess import CalledProcessError as ProcessError
+from subprocess import DEVNULL
 
 from mgit import git
 
@@ -22,7 +23,7 @@ class GitTestCase(unittest.TestCase):
         actual = git.branch_exists(branch)
 
         args = ["git", "rev-parse", "--quiet", "--verify", branch]
-        mock_check_call.assert_called_with(args, stdout=subprocess.DEVNULL)
+        mock_check_call.assert_called_with(args, stdout=DEVNULL)
         self.assertTrue(actual)
 
     @mock.patch("mgit.git.subprocess.check_call")
@@ -33,7 +34,7 @@ class GitTestCase(unittest.TestCase):
         mock_check_call.side_effect = ProcessError(returncode=17, cmd=cmd)
         actual = git.branch_exists(branch)
 
-        mock_check_call.assert_called_with(args, stdout=subprocess.DEVNULL)
+        mock_check_call.assert_called_with(args, stdout=DEVNULL)
         self.assertFalse(actual)
 
     @mock.patch("mgit.git.branch_exists")
