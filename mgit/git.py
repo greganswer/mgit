@@ -44,12 +44,12 @@ def new_branch_off(base_branch: str, new_branch: str):
     subprocess.call(["git", "checkout", "-b", new_branch])
 
 
-# def rebase_off_branch(base_branch: str):
-#     """ Rebase off a base branch. """
-#     subprocess.call(["git", "checkout", base_branch])
-#     subprocess.call(["git", "pull"])
-#     subprocess.call(["git", "checkout", "-"])
-#     subprocess.call(["git", "rebase", "-i", base_branch])
+def rebase_off_branch(base_branch: str):
+    """ Rebase off a base branch. """
+    subprocess.call(["git", "checkout", base_branch])
+    subprocess.call(["git", "pull"])
+    subprocess.call(["git", "checkout", "-"])
+    subprocess.call(["git", "rebase", "-i", base_branch])
 
 
 # def commit_all(message: str):

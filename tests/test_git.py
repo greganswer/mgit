@@ -63,6 +63,18 @@ class GitTestCase(unittest.TestCase):
             ]
         )
 
+    @mock.patch("mgit.git.subprocess.call")
+    def test_rebase_off_branch(self, mock_call):
+        git.rebase_off_branch(BASE_BRANCHE)
+        mock_call.assert_has_calls(
+            [
+                mock.call(["git", "checkout", BASE_BRANCHE]),
+                mock.call(["git", "pull"]),
+                mock.call(["git", "checkout", "-"]),
+                mock.call(["git", "rebase", "-i", BASE_BRANCHE]),
+            ]
+        )
+
 
 # Run the tests
 if __name__ == "__main__":

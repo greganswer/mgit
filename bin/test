@@ -33,7 +33,7 @@ class App:
 )
 @click.option("--verbose", "-v", is_flag=True, help="Enable verbose mode.")
 @click.pass_context
-def cli(ctx, verbose, log_file, verbose):
+def cli(ctx, log_file, verbose):
     """
     Run tests for this project.
     """
