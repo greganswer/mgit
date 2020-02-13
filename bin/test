@@ -17,31 +17,15 @@ INITIAL_DIRECTORY = os.getcwd()
 CURRENT_FILE_DIR = os.path.dirname(os.path.realpath(__file__))
 
 
-class App:
-    def __init__(self, log_file, verbose: bool):
-        self.log_file = log_file
-        self.verbose = verbose
-
-
 @click.group(
     invoke_without_command=True,
     context_settings={"help_option_names": ["-h", "--help"]},
 )
-@click.option(
-    "--log-file",
-    "-l",
-    type=click.File("w"),
-    default=sys.stderr,
-    show_default="stderr",
-    help="File to log errors and warnings.",
-)
 @click.option("--verbose", "-v", is_flag=True, help="Enable verbose mode.")
-@click.pass_context
-def cli(ctx, log_file, verbose):
+def cli(verbose):
     """
     Run tests for this project.
     """
-    ctx.obj = App(log_file=log_file, verbose=verbose)
 
     cd_project_root()
     command = TEST_COMMAND
@@ -54,8 +38,7 @@ def cli(ctx, log_file, verbose):
 
 @cli.command()
 @click.option("--verbose", "-v", is_flag=True, help="Enable verbose mode.")
-@click.pass_obj
-def watch(app, verbose):
+def watch(verbose):
     """
     Automatically run tests after updating files
 
