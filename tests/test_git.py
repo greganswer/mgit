@@ -74,6 +74,19 @@ class GitTestCase(unittest.TestCase):
             ]
         )
 
+    @mock.patch("mgit.git.subprocess.call")
+    def test_push(self, mock_call):
+        git.push(BASE_BRANCHE)
+        mock_call.assert_has_calls(
+            [
+                mock.call(["git", "push", "-f"], shell=False),
+                mock.call(
+                    ["git", "push", "--set-upstream", "origin", BASE_BRANCHE],
+                    shell=False,
+                ),
+            ]
+        )
+
 
 # Run the tests
 if __name__ == "__main__":

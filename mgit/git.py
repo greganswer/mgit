@@ -61,10 +61,10 @@ def commit_all(message: str):
     execute_call(f'git commit -m "{message}"', shell=True)
 
 
-# def push(branch: str):
-#     """ Push the changes to the remote branch. Ignores errors. """
-#     execute_call(["git", "push", "-f"], abort=False)
-#     execute_call(["git", "push", "--set-upstream", "origin", branch], abort=False)
+def push(branch: str):
+    """ Push the changes to the remote branch. Ignores errors. """
+    execute_call(["git", "push", "-f"], abort=False)
+    execute_call(["git", "push", "--set-upstream", "origin", branch], abort=False)
 
 
 # TODO: Extract Duplicate Function
