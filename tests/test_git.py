@@ -1,7 +1,6 @@
 import unittest
 import mock
-from subprocess import CalledProcessError as ProcessError
-from subprocess import DEVNULL
+from subprocess import DEVNULL, CalledProcessError as ProcessError
 
 from mgit import git
 

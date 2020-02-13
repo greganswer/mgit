@@ -7,7 +7,7 @@ import os
 import shlex
 import shutil
 
-import git
+from mgit import git
 from .config import Config
 from .translator import Translator
 from .issue import Issue
@@ -39,99 +39,97 @@ class App:
     def branch(self, issue_id: str, base_branch: str):
         """ Create a branch using issue ID and title. """
         if not base_branch:
-            base_branch = default_base_branch()
+            base_branch = git.default_base_branch()
 
         new_branch = self.get_issue_or_abort(issue_id).branch_name
         self.echo(self._translator.create_branch_warning())
         self.confirm_or_abort()
-        self.execute_or_abort(f"git checkout {base_branch}")
-        self.execute_or_abort(f"git pull")
-        self.execute_or_abort(f"git checkout -b {new_branch}")
+        git.new_branch_off(base_branch)
 
-    def commit(self, message: str, issue_id: str):
-        """ Create a commit and push to GitHub. """
-        issue = None
-        if not message:
-            try:
-                if issue_id:
-                    issue = self.get_issue_or_abort(issue_id)
-                else:
-                    issue = Issue.from_branch(current_branch())
-            except ValueError:
-                self.abort(self._translator.branch_has_no_issue_id(current_branch()))
-            message = issue.title
+    # def commit(self, message: str, issue_id: str):
+    #     """ Create a commit and push to GitHub. """
+    #     issue = None
+    #     if not message:
+    #         try:
+    #             if issue_id:
+    #                 issue = self.get_issue_or_abort(issue_id)
+    #             else:
+    #                 issue = Issue.from_branch(current_branch())
+    #         except ValueError:
+    #             self.abort(self._translator.branch_has_no_issue_id(current_branch()))
+    #         message = issue.title
 
-        if issue and self._config.issue_tracker_is_github:
-            message += self._translator.closes_issue_id(issue.id)
+    #     if issue and self._config.issue_tracker_is_github:
+    #         message += self._translator.closes_issue_id(issue.id)
 
-        self.echo(self._translator.commit_warning(message))
-        self.confirm_or_abort()
-        self.safe_execute("git add .")
-        # TODO: Extract to git package
-        # TODO: Try to replace with the following:
-        #       self.execute(f'git commit -m "{message}"', abort=False, shell=True) # TODO: remove shell=True
-        try:
-            subprocess.call(f'git commit -m "{message}"', shell=True)
-        except subprocess.CalledProcessError:
-            pass
+    #     self.echo(self._translator.commit_warning(message))
+    #     self.confirm_or_abort()
+    #     self.safe_execute("git add .")
+    #     # TODO: Extract to git package
+    #     # TODO: Try to replace with the following:
+    #     #       self.execute(f'git commit -m "{message}"', abort=False, shell=True) # TODO: remove shell=True
+    #     try:
+    #         subprocess.call(f'git commit -m "{message}"', shell=True)
+    #     except subprocess.CalledProcessError:
+    #         pass
 
-        self.execute_first_success(
-            "git push", f"git push --set-upstream origin {current_branch()}"
-        )
+    #     self.execute_first_success(
+    #         "git push", f"git push --set-upstream origin {current_branch()}"
+    #     )
 
-    def open(self):
-        """ Open an issue in the Google Chrome browser. """
+    # def open(self):
+    #     """ Open an issue in the Google Chrome browser. """
 
-    def pull_request(self, base_branch: str):
-        """ Create a GitHub Pull Request for the specified branch. """
-        if not base_branch:
-            base_branch = default_base_branch()
+    # def pull_request(self, base_branch: str):
+    #     """ Create a GitHub Pull Request for the specified branch. """
+    #     if not base_branch:
+    #         base_branch = default_base_branch()
 
-        issue = Issue.from_branch(current_branch())
-        title = message = issue.title
-        if issue and self._config.issue_tracker_is_github:
-            message += f"\n\nCloses #{issue.id}"
+    #     issue = Issue.from_branch(current_branch())
+    #     title = message = issue.title
+    #     if issue and self._config.issue_tracker_is_github:
+    #         message += f"\n\nCloses #{issue.id}"
 
-        self.echo(self._translator.pull_request_warning(message, base_branch, title))
-        self.confirm_or_abort()
-        self.safe_execute("git add .")
-        # TODO: Extract to git package
-        # TODO: Try to replace with the following:
-        #       self.execute(f'git commit -m "{message}"', abort=False, shell=True) # TODO: remove shell=True
-        try:
-            subprocess.call(f'git commit -m "{message}"', shell=True)
-        except subprocess.CalledProcessError:
-            pass
+    #     self.echo(self._translator.pull_request_warning(message, base_branch, title))
+    #     self.confirm_or_abort()
+    #     self.safe_execute("git add .")
+    #     # TODO: Extract to git package
+    #     # TODO: Try to replace with the following:
+    #     #       self.execute(f'git commit -m "{message}"', abort=False, shell=True) # TODO: remove shell=True
+    #     try:
+    #         subprocess.call(f'git commit -m "{message}"', shell=True)
+    #     except subprocess.CalledProcessError:
+    #         pass
 
-        self.echo(self._translator.update_base_branch_confirmation(base_branch))
-        if self.confirm():
-            self.rebase_off_branch(base_branch)
+    #     self.echo(self._translator.update_base_branch_confirmation(base_branch))
+    #     if self.confirm():
+    #         self.rebase_off_branch(base_branch)
 
-        body = self._translator.pull_request_body(
-            title, self._config.issue_tracker, issue.id, issue.url
-        )
-        try:
-            assignee = self.execute("git config --global user.handle")
-        except subprocess.CalledProcessError:
-            assignee = ""
+    #     body = self._translator.pull_request_body(
+    #         title, self._config.issue_tracker, issue.id, issue.url
+    #     )
+    #     try:
+    #         assignee = self.execute("git config --global user.handle")
+    #     except subprocess.CalledProcessError:
+    #         assignee = ""
 
-        self.execute_hub_command(
-            f'pull-request -fpo -b {base_branch} -m "{body}" -a {assignee}'
-        )
-        self.safe_execute("git push")
+    #     self.execute_hub_command(
+    #         f'pull-request -fpo -b {base_branch} -m "{body}" -a {assignee}'
+    #     )
+    #     self.safe_execute("git push")
 
-    # Helpers
+    # # Helpers
 
-    def rebase_off_branch(self, branch):
-        self.execute_or_abort(f"git checkout {branch}")
-        self.execute_or_abort(f"git pull")
-        self.execute_or_abort(f"git checkout -")
+    # def rebase_off_branch(self, branch):
+    #     self.execute_or_abort(f"git checkout {branch}")
+    #     self.execute_or_abort(f"git pull")
+    #     self.execute_or_abort(f"git checkout -")
 
-        # NOTE: call is required in order for this to be interactive.
-        subprocess.call(shlex.split(f"git rebase -i {branch}"))
-        self.execute_first_success(
-            f"git push -f", f"git push --set-upstream origin {current_branch()}"
-        )
+    #     # NOTE: call is required in order for this to be interactive.
+    #     subprocess.call(shlex.split(f"git rebase -i {branch}"))
+    #     self.execute_first_success(
+    #         f"git push -f", f"git push --set-upstream origin {current_branch()}"
+    #     )
 
     def _config_init(self):
         """ Initialize the config values for this Git repository. """

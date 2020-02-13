@@ -7,7 +7,9 @@ from ._version import __version__
 
 
 @click.group(
-    cls=CustomMultiCommand, context_settings={"help_option_names": ["-h", "--help"]}
+    name="mgit",  # TODO: rename function to mgit
+    cls=CustomMultiCommand,
+    context_settings={"help_option_names": ["-h", "--help"]},
 )
 @click.option(
     "--log-file",
