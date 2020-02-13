@@ -7,6 +7,16 @@ from mgit import git
 
 # TODO: Add descriptions for each function.
 class GitTestCase(unittest.TestCase):
+    @mock.patch("mgit.git.os.path.isdir")
+    def test_initialized(self, mock_isdir):
+        mock_isdir.return_value = False
+        self.assertFalse(git.initialized())
+        mock_isdir.assert_called_with(".git")
+
+        mock_isdir.return_value = True
+        self.assertTrue(git.initialized())
+        mock_isdir.assert_called_with(".git")
+
     @mock.patch("mgit.git.subprocess.check_output")
     def test_current_branch(self, mock_check_output):
         mock_check_output.return_value = b"my_branch_name"

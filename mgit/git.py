@@ -7,9 +7,9 @@ import os
 DEFAULT_BASE_BRANCHES = ["dev", "develop", "development", "master"]
 
 
-# def initialized() -> bool:
-#     """ Determine if current directory is a Git repo. """
-#     return os.path.isdir(".git")
+def initialized() -> bool:
+    """ Determine if current directory is a Git repo. """
+    return os.path.isdir(".git")
 
 
 def current_branch() -> str:
@@ -38,26 +38,14 @@ def branch_exists(branch: str) -> bool:
 
 
 # def new_branch_off(base_branch: str, new_branch: str):
-#     """ Create a new branch off a base branch.
-
-#     Raises
-#     ------
-#     subprocess.CalledProcessError
-#         If any of the commands fail.
-#     """
+#     """ Create a new branch off a base branch. """
 #     subprocess.call(["git", "checkout", base_branch])
 #     subprocess.call(["git", "pull"])
 #     subprocess.call(["git", "checkout", "-b", new_branch])
 
 
 # def rebase_off_branch(base_branch: str):
-#     """ Rebase off a base branch.
-
-#     Raises
-#     ------
-#     subprocess.CalledProcessError
-#         If any of the commands fail.
-#     """
+#     """ Rebase off a base branch. """
 #     subprocess.call(["git", "checkout", base_branch])
 #     subprocess.call(["git", "pull"])
 #     subprocess.call(["git", "checkout", "-"])
