@@ -1,6 +1,7 @@
 import click  # https://click.palletsprojects.com/en/7.x/
 import sys
-from .helpers import CustomMultiCommand, Mutex
+
+from .click_helpers import CustomMultiCommand, Mutex
 from .app import App
 from ._version import __version__
 
