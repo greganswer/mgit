@@ -3,9 +3,7 @@ import os
 import click
 import sys
 
-
-# TODO: Add proper docstring format
-#       ref: https://realpython.com/documenting-python-code/#docstring-formats
+from mgit import execute
 
 DEFAULT_BASE_BRANCHES = ["dev", "develop", "development", "master"]
 
@@ -57,30 +55,12 @@ def rebase_off_branch(base_branch: str):
 
 def commit_all(message: str):
     """ Add all files and commit. Ignores errors. """
-    execute_call(["git", "add", "."], abort=False)
-    execute_call(f'git commit -m "{message}"', shell=True)
+    execute.call(["git", "add", "."], abort=False)
+    execute.call(f'git commit -m "{message}"', shell=True)
 
 
 def push(branch: str):
     """ Push the changes to the remote branch. Ignores errors. """
-    execute_call(["git", "push", "-f"], abort=False)
-    execute_call(["git", "push", "--set-upstream", "origin", branch], abort=False)
+    execute.call(["git", "push", "-f"], abort=False)
+    execute.call(["git", "push", "--set-upstream", "origin", branch], abort=False)
 
-
-# TODO: Extract Duplicate Function
-def execute_call(command, abort=True, shell=False, verbose=False):
-    """ Execute `subprocess.call`.
-
-    Raises
-    ------
-    subprocess.CalledProcessError
-        If the commands fail and `abort` is True.
-    """
-    try:
-        if verbose:
-            click.echo(command)
-        subprocess.call(command, shell=shell)
-    except subprocess.CalledProcessError as e:
-        if abort:
-            click.echo(e)
-            sys.exit(e.returncode)

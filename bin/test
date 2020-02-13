@@ -5,6 +5,10 @@ import sys
 import subprocess
 import os
 
+# FIXME: Hack to allow import from sibling package. Ref https://stackoverflow.com/a/27878845
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+from mgit import execute
+
 
 # TODO: Convert to string if shell=True requires it
 # Ref: https://docs.python.org/3.7/library/unittest.html#command-line-interface
@@ -44,7 +48,7 @@ def cli(ctx, log_file, verbose):
     if verbose:
         command.append("-v")
 
-    execute_call(" ".join(command), shell=True, verbose=verbose)
+    execute.call(" ".join(command), shell=True, verbose=verbose)
     os.chdir(INITIAL_DIRECTORY)
 
 
@@ -74,31 +78,12 @@ def watch(app, verbose):
     if verbose:
         command = " ".join(watch_command) + ' "python3 -m unittest -v tests/**.py"'
 
-    execute_call(command, shell=True, verbose=verbose)
+    execute.call(command, shell=True, verbose=verbose)
     os.chdir(INITIAL_DIRECTORY)
 
 
 def cd_project_root():
     os.chdir(os.path.dirname(CURRENT_FILE_DIR))
-
-
-# TODO: Extract Duplicate Function
-def execute_call(command, abort=True, shell=False, verbose=False):
-    """ Execute `subprocess.call`.
-
-    Raises
-    ------
-    subprocess.CalledProcessError
-        If the commands fail and `abort` is True.
-    """
-    try:
-        if verbose:
-            click.echo(command)
-        subprocess.call(command, shell=shell)
-    except subprocess.CalledProcessError as e:
-        if abort:
-            click.echo(e)
-            sys.exit(e.returncode)
 
 
 if __name__ == "__main__":
