@@ -5,6 +5,8 @@ from subprocess import DEVNULL
 
 from mgit import git
 
+BASE_BRANCHE = "my_base_branch"
+
 # TODO: Add descriptions for each function.
 class GitTestCase(unittest.TestCase):
     @mock.patch("mgit.git.os.path.isdir")
@@ -20,32 +22,22 @@ class GitTestCase(unittest.TestCase):
     @mock.patch("mgit.git.subprocess.check_output")
     def test_current_branch(self, mock_check_output):
         mock_check_output.return_value = b"my_branch_name"
-
-        actual = git.current_branch()
-
+        self.assertEqual("my_branch_name", git.current_branch())
         args = ["git", "rev-parse", "--abbrev-ref", "HEAD"]
         mock_check_output.assert_called_with(args)
-        self.assertEqual("my_branch_name", actual)
 
     @mock.patch("mgit.git.subprocess.check_call")
     def test_branch_exists_true(self, mock_check_call):
-        branch = "real_branch"
-        actual = git.branch_exists(branch)
-
-        args = ["git", "rev-parse", "--quiet", "--verify", branch]
+        self.assertTrue(git.branch_exists(BASE_BRANCHE))
+        args = ["git", "rev-parse", "--quiet", "--verify", BASE_BRANCHE]
         mock_check_call.assert_called_with(args, stdout=DEVNULL)
-        self.assertTrue(actual)
 
     @mock.patch("mgit.git.subprocess.check_call")
     def test_branch_exists_false(self, mock_check_call):
-        branch = "fake_branch"
-        args = ["git", "rev-parse", "--quiet", "--verify", branch]
-        cmd = "".join(args)
-        mock_check_call.side_effect = ProcessError(returncode=17, cmd=cmd)
-        actual = git.branch_exists(branch)
-
+        args = ["git", "rev-parse", "--quiet", "--verify", BASE_BRANCHE]
+        mock_check_call.side_effect = ProcessError(returncode=17, cmd="".join(args))
+        self.assertFalse(git.branch_exists(BASE_BRANCHE))
         mock_check_call.assert_called_with(args, stdout=DEVNULL)
-        self.assertFalse(actual)
 
     @mock.patch("mgit.git.branch_exists")
     def test_default_base_branch(self, mock_branch_exists):
@@ -57,11 +49,19 @@ class GitTestCase(unittest.TestCase):
                 return True if arg == branch else False
 
             mock_branch_exists.side_effect = side_effect
-            actual = git.default_base_branch()
-            self.assertEqual(branch, actual)
+            self.assertEqual(branch, git.default_base_branch())
 
-    def test_commit(self):
-        pass
+    @mock.patch("mgit.git.subprocess.call")
+    def test_new_branch_off(self, mock_call):
+        new_branch = "my_new_branch"
+        git.new_branch_off(BASE_BRANCHE, new_branch)
+        mock_call.assert_has_calls(
+            [
+                mock.call(["git", "checkout", BASE_BRANCHE]),
+                mock.call(["git", "pull"]),
+                mock.call(["git", "checkout", "-b", new_branch]),
+            ]
+        )
 
 
 # Run the tests
