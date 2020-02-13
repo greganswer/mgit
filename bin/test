@@ -10,9 +10,7 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from mgit import execute
 
 
-# TODO: Convert to string if shell=True requires it
-# Ref: https://docs.python.org/3.7/library/unittest.html#command-line-interface
-TEST_COMMAND = ["python3", "-m", "unittest", "tests/**.py"]
+TEST_COMMAND = " python3 -m unittest tests/**.py "
 INITIAL_DIRECTORY = os.getcwd()
 CURRENT_FILE_DIR = os.path.dirname(os.path.realpath(__file__))
 
@@ -26,13 +24,9 @@ def cli(verbose):
     """
     Run tests for this project.
     """
-
     cd_project_root()
-    command = TEST_COMMAND
-    if verbose:
-        command.append("-v")
-
-    execute.call(" ".join(command), shell=True, verbose=verbose)
+    command = f"{TEST_COMMAND} -v" if verbose else TEST_COMMAND
+    execute.call(command, shell=True, verbose=verbose)
     os.chdir(INITIAL_DIRECTORY)
 
 
@@ -46,20 +40,12 @@ def watch(verbose):
     Ref: https://github.com/remy/nodemon
     """
     click.echo("Watching python files...\n")
-    watch_command = [
-        "nodemon",
-        "--delay",
-        "2",
-        "--ext",
-        "py",
-        "--exec",
-    ]
     cd_project_root()
-    # TODO: Clean this up
-    command = watch_command + TEST_COMMAND
-    command = " ".join(command)
+    watch_command = "nodemon --delay 2 --ext py --exec"
     if verbose:
-        command = " ".join(watch_command) + ' "python3 -m unittest -v tests/**.py"'
+        command = watch_command + ' "python3 -m unittest -v tests/**.py"'
+    else:
+        command = watch_command + TEST_COMMAND
 
     execute.call(command, shell=True, verbose=verbose)
     os.chdir(INITIAL_DIRECTORY)
