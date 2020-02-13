@@ -1,5 +1,8 @@
 import subprocess
 import os
+import click
+import sys
+
 
 # TODO: Add proper docstring format
 #       ref: https://realpython.com/documenting-python-code/#docstring-formats
@@ -52,13 +55,10 @@ def rebase_off_branch(base_branch: str):
     subprocess.call(["git", "rebase", "-i", base_branch])
 
 
-# def commit_all(message: str):
-#     """ Add all files and commit. Ignores errors. """
-#     execute_call(["git", "add", "."], abort=False)
-#     try:
-#         subprocess.call(f'git commit -m "{message}"', shell=True)
-#     except subprocess.CalledProcessError:
-#         pass
+def commit_all(message: str):
+    """ Add all files and commit. Ignores errors. """
+    execute_call(["git", "add", "."], abort=False)
+    execute_call(f'git commit -m "{message}"', shell=True)
 
 
 # def push(branch: str):
@@ -67,17 +67,20 @@ def rebase_off_branch(base_branch: str):
 #     execute_call(["git", "push", "--set-upstream", "origin", branch], abort=False)
 
 
-# # TODO: Extract Duplicate Function
-# def execute_call(command, abort=True):
-#     """ Execute `subprocess.call`.
+# TODO: Extract Duplicate Function
+def execute_call(command, abort=True, shell=False, verbose=False):
+    """ Execute `subprocess.call`.
 
-#     Raises
-#     ------
-#     subprocess.CalledProcessError
-#         If the commands fail and `abort` is True.
-#     """
-#     try:
-#         subprocess.call(command)
-#     except subprocess.CalledProcessError as e:
-#         if abort:
-#             raise e
+    Raises
+    ------
+    subprocess.CalledProcessError
+        If the commands fail and `abort` is True.
+    """
+    try:
+        if verbose:
+            click.echo(command)
+        subprocess.call(command, shell=shell)
+    except subprocess.CalledProcessError as e:
+        if abort:
+            click.echo(e)
+            sys.exit(e.returncode)

@@ -64,14 +64,13 @@ class GitTestCase(unittest.TestCase):
         )
 
     @mock.patch("mgit.git.subprocess.call")
-    def test_rebase_off_branch(self, mock_call):
-        git.rebase_off_branch(BASE_BRANCHE)
+    def test_commit_all(self, mock_call):
+        message = "Add new files"
+        git.commit_all(message)
         mock_call.assert_has_calls(
             [
-                mock.call(["git", "checkout", BASE_BRANCHE]),
-                mock.call(["git", "pull"]),
-                mock.call(["git", "checkout", "-"]),
-                mock.call(["git", "rebase", "-i", BASE_BRANCHE]),
+                mock.call(["git", "add", "."], shell=False),
+                mock.call(f'git commit -m "{message}"', shell=True),
             ]
         )
 
