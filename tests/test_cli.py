@@ -15,19 +15,20 @@ class GitTestCase(unittest.TestCase):
 
     def test_cli(self):
         result = self.runner.invoke(cli)
-        self.assertIn("Usage: mGit [OPTIONS] COMMAND [ARGS]...", result.output)
-        self.assertEqual(0, result.exit_code)
-
-    def test_branch(self):
-        result = self.runner.invoke(cli, ["branch", ISSUE_ID])
-        if result.exception:
-            print(result.exception)
-        self.assertIsNone(result.exception)
         self.assertIn("Usage: mgit [OPTIONS] COMMAND [ARGS]...", result.output)
         self.assertEqual(0, result.exit_code)
 
-    def test_branch_without_default_base_branch(self):
-        pass
+    # @mock.patch("mgit.app.requests")
+    # def test_branch(self, mock_request):
+    #     result = self.runner.invoke(cli, ["branch", ISSUE_ID])
+    #     if result.exception:
+    #         print(result.exception)
+    #     self.assertIsNone(result.exception)
+    #     self.assertIn("Usage: mgit [OPTIONS] COMMAND [ARGS]...", result.output)
+    #     self.assertEqual(0, result.exit_code)
+
+    # def test_branch_without_default_base_branch(self):
+    #     pass
 
     # def test_open(self):
     #     print(dir(cli))

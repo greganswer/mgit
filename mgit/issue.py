@@ -1,4 +1,7 @@
 import inflection
+import requests
+import os
+
 from .config import Config
 
 
@@ -12,7 +15,7 @@ class Issue:
         self._summary = summary
         self._config = config
 
-    def __str__(self):
+    def __str__(self) -> str:
         """
         Return ID and title case summary of the issue.
 
@@ -20,28 +23,10 @@ class Issue:
         >>> print(issue)
         JIR-123: Update Readme.Md File
         """
-        return f"{self._id}: {self.title()}"
-
-    @classmethod
-    def from_branch(cls, name: str, config=Config()):
-        """
-        Create an Issue object from the name of a branch.
-
-        >>> Issue.from_branch('jir-123-update-readme-file')
-        JIR-123: Update Readme File
-        >>> Issue.from_branch('123-update-readme-file')
-        123: Update Readme File
-        """
-        parts = name.split("-")
-        for index, part in enumerate(parts):
-            if part.isdigit():
-                id = "-".join(parts[: index + 1])
-                summary = " ".join(parts[index + 1 :])
-                break
-        return Issue(id=id, summary=summary, config=config)
+        return f"{self._id}: {self.title}"
 
     @property
-    def id(self):
+    def id(self) -> str:
         return self._id
 
     @property
@@ -77,3 +62,50 @@ class Issue:
         http://example.com/7
         """
         return f"{self._config.issue_tracker_api}/{self._id}"
+
+
+def get_from_tracker(issue_id: str, config=Config()) -> Issue:
+    """ Get Issue info by making an HTTP request. 
+    
+    :raises: equests.exceptions.HTTPError
+    """
+    url = f"{config.issue_tracker_api.strip('/')}/{issue_id}"
+    auth = _get_auth_values(config)
+    headers = {"content-type": "application/json"}
+    res = requests.get(url, auth=auth, headers=headers)
+    res.raise_for_status()
+
+    summary = ""
+    if config.issue_tracker_is_github:
+        summary = res.json()["title"]
+    # TODO: replace with `res.json().get("title", "")`
+
+    return Issue(issue_id, summary)
+
+
+def get_from_branch(name: str, config=Config()) -> Issue:
+    """
+    Create an Issue object from the name of a branch.
+
+    >>> get_from_branch('jir-123-update-readme-file')
+    JIR-123: Update Readme File
+    >>> get_from_branch('123-update-readme-file')
+    123: Update Readme File
+    """
+    parts = name.split("-")
+    for index, part in enumerate(parts):
+        if part.isdigit():
+            id = "-".join(parts[: index + 1])
+            summary = " ".join(parts[index + 1 :])
+            break
+
+    return Issue(id=id, summary=summary, config=config)
+
+
+def _get_auth_values(config):
+    if config.issue_tracker_is_github and os.getenv("MGIT_GITHUB_USERNAME"):
+        return (
+            os.getenv("MGIT_GITHUB_USERNAME"),
+            os.getenv("MGIT_GITHUB_API_TOKEN"),
+        )
+    return None

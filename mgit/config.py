@@ -9,6 +9,7 @@ class Config(dict):
         """ Load the JSON file and get the value. """
         if key not in Config.allowed_attributes:
             raise KeyError(f"'{key}' is not an allowed attribute")
+
         self.load()
         return self.get(key)
 
@@ -20,8 +21,10 @@ class Config(dict):
         """
         if key not in Config.allowed_attributes:
             raise KeyError(f"'{key}' is not an allowed attribute")
+
         if "http://" in value or "https://" in value:
             value = value.strip("/")
+
         self[key] = value
         self.save()
 
@@ -45,6 +48,7 @@ class Config(dict):
         """ Get the name of the issue tracker provider. """
         if self.issue_tracker_is_github:
             return "GitHub"
+
         return ""
 
     @property
