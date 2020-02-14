@@ -39,7 +39,6 @@ class App:
     def branch(self, issue_id: str, base_branch: str):
         """ Create a branch using issue ID and title. """
         # TODO: Validate Inputs
-        #   - issue_id present
         #   - username present in os.getenv("MGIT_GITHUB_USERNAME") or similar
         #   - token present in os.getenv("MGIT_GITHUB_API_TOKEN") or similar
 
