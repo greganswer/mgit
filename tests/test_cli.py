@@ -1,14 +1,18 @@
 import unittest
 import mock
-from subprocess import DEVNULL, CalledProcessError as ProcessError
 from click.testing import CliRunner
+from requests.exceptions import Timeout, HTTPError
+from subprocess import DEVNULL, CalledProcessError as ProcessError
 
 from mgit.cli import cli
 
-BASE_BRANCHE = "my_base_branch"
+BASE_BRANCH = "my_base_branch"
+NEW_BRANCH = "jir-472-update-readme-file"
 ISSUE_ID = "JIR-472"
+REQUEST_TIMEOUT = Timeout("HTTP Request Timeout")
+REQUEST_HTTP_ERROR = HTTPError("HTTP Request Error")
 
-# TODO: Add descriptions for each function.
+
 class GitTestCase(unittest.TestCase):
     def setUp(self):
         self.runner = CliRunner()
@@ -18,14 +22,36 @@ class GitTestCase(unittest.TestCase):
         self.assertIn("Usage: mgit [OPTIONS] COMMAND [ARGS]...", result.output)
         self.assertEqual(0, result.exit_code)
 
-    # @mock.patch("mgit.app.requests")
-    # def test_branch(self, mock_request):
-    #     result = self.runner.invoke(cli, ["branch", ISSUE_ID])
-    #     if result.exception:
-    #         print(result.exception)
-    #     self.assertIsNone(result.exception)
-    #     self.assertIn("Usage: mgit [OPTIONS] COMMAND [ARGS]...", result.output)
-    #     self.assertEqual(0, result.exit_code)
+    @mock.patch("mgit.git.new_branch_off")
+    @mock.patch("mgit.issues.requests")
+    def test_branch(self, mock_requests, mock_new_branch_off):
+        # Create a new Mock to imitate a Response
+        mock_response = mock.Mock(
+            **{"status_code": 200, "json.return_value": {"title": "update readme file"}}
+        )
+
+        # Test successful HTTP request
+        mock_requests.get.side_effect = [mock_response]
+        result = self.runner.invoke(cli, ["branch", ISSUE_ID], input="yes")
+
+        expected = f"This will create a branch off master named {NEW_BRANCH}"
+        self.assertIn(expected, result.output, msg=result.exception)
+        self.assertEqual(0, result.exit_code)
+        mock_new_branch_off.assert_called_with("master", NEW_BRANCH)
+
+    @mock.patch("mgit.issues.requests")
+    def test_branch_exceptions(self, mock_requests):
+        # Test output with request Timeout
+        mock_requests.get.side_effect = REQUEST_TIMEOUT
+        result = self.runner.invoke(cli, ["branch", ISSUE_ID])
+        self.assertIn(str(REQUEST_TIMEOUT), result.output, msg=result.exception)
+        self.assertEqual(1, result.exit_code)
+
+        # Test output with request HTTPError
+        mock_requests.get.side_effect = REQUEST_HTTP_ERROR
+        result = self.runner.invoke(cli, ["branch", ISSUE_ID])
+        self.assertIn(str(REQUEST_HTTP_ERROR), result.output, msg=result.exception)
+        self.assertEqual(1, result.exit_code)
 
     # def test_branch_without_default_base_branch(self):
     #     pass

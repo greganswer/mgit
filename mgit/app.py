@@ -51,7 +51,7 @@ class App:
         except (requests.exceptions.HTTPError, requests.exceptions.Timeout) as e:
             self.abort(e)
 
-        self.echo(self._translator.create_branch_warning())
+        self.echo(self._translator.create_branch_warning(base_branch, new_branch))
         self.confirm_or_abort()
         git.new_branch_off(base_branch, new_branch)
 
@@ -229,4 +229,6 @@ class App:
 
     def log(self, message: str):
         """ Log message to the log_file. """
+        # TODO: Delete one
+        click.echo(message)
         click.echo(message, file=self._log_file)

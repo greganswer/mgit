@@ -4,7 +4,7 @@ from subprocess import DEVNULL, CalledProcessError as ProcessError
 
 from mgit import git
 
-BASE_BRANCHE = "my_base_branch"
+BASE_BRANCH = "my_base_branch"
 
 # TODO: Add descriptions for each function.
 class GitTestCase(unittest.TestCase):
@@ -27,15 +27,15 @@ class GitTestCase(unittest.TestCase):
 
     @mock.patch("mgit.git.subprocess.check_call")
     def test_branch_exists_true(self, mock_check_call):
-        self.assertTrue(git.branch_exists(BASE_BRANCHE))
-        args = ["git", "rev-parse", "--quiet", "--verify", BASE_BRANCHE]
+        self.assertTrue(git.branch_exists(BASE_BRANCH))
+        args = ["git", "rev-parse", "--quiet", "--verify", BASE_BRANCH]
         mock_check_call.assert_called_with(args, stdout=DEVNULL)
 
     @mock.patch("mgit.git.subprocess.check_call")
     def test_branch_exists_false(self, mock_check_call):
-        args = ["git", "rev-parse", "--quiet", "--verify", BASE_BRANCHE]
+        args = ["git", "rev-parse", "--quiet", "--verify", BASE_BRANCH]
         mock_check_call.side_effect = ProcessError(returncode=17, cmd="".join(args))
-        self.assertFalse(git.branch_exists(BASE_BRANCHE))
+        self.assertFalse(git.branch_exists(BASE_BRANCH))
         mock_check_call.assert_called_with(args, stdout=DEVNULL)
 
     @mock.patch("mgit.git.branch_exists")
@@ -53,10 +53,10 @@ class GitTestCase(unittest.TestCase):
     @mock.patch("mgit.git.subprocess.call")
     def test_new_branch_off(self, mock_call):
         new_branch = "my_new_branch"
-        git.new_branch_off(BASE_BRANCHE, new_branch)
+        git.new_branch_off(BASE_BRANCH, new_branch)
         mock_call.assert_has_calls(
             [
-                mock.call(["git", "checkout", BASE_BRANCHE]),
+                mock.call(["git", "checkout", BASE_BRANCH]),
                 mock.call(["git", "pull"]),
                 mock.call(["git", "checkout", "-b", new_branch]),
             ]
@@ -75,12 +75,12 @@ class GitTestCase(unittest.TestCase):
 
     @mock.patch("mgit.git.subprocess.call")
     def test_push(self, mock_call):
-        git.push(BASE_BRANCHE)
+        git.push(BASE_BRANCH)
         mock_call.assert_has_calls(
             [
                 mock.call(["git", "push", "-f"], shell=False),
                 mock.call(
-                    ["git", "push", "--set-upstream", "origin", BASE_BRANCHE],
+                    ["git", "push", "--set-upstream", "origin", BASE_BRANCH],
                     shell=False,
                 ),
             ]

@@ -5,8 +5,6 @@ from requests.exceptions import Timeout
 
 from mgit import issues
 
-BASE_BRANCHE = "my_base_branch"
-
 
 class IssuesTestCase(unittest.TestCase):
     def test_issues_properties(self):
