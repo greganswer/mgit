@@ -64,32 +64,13 @@ class Issue:
         return f"{self._config.issue_tracker_api}/{self._id}"
 
 
-def get_from_tracker(issue_id: str, config=Config()) -> Issue:
-    """ Get Issue info by making an HTTP request. 
-    
-    :raises: equests.exceptions.HTTPError
-    """
-    url = f"{config.issue_tracker_api.strip('/')}/{issue_id}"
-    auth = _get_auth_values(config)
-    headers = {"content-type": "application/json"}
-    res = requests.get(url, auth=auth, headers=headers)
-    res.raise_for_status()
-
-    summary = ""
-    if config.issue_tracker_is_github:
-        summary = res.json()["title"]
-    # TODO: replace with `res.json().get("title", "")`
-
-    return Issue(issue_id, summary)
-
-
-def get_from_branch(name: str, config=Config()) -> Issue:
+def from_branch(name: str, config=Config()) -> Issue:
     """
     Create an Issue object from the name of a branch.
 
-    >>> get_from_branch('jir-123-update-readme-file')
+    >>> from_branch('jir-123-update-readme-file')
     JIR-123: Update Readme File
-    >>> get_from_branch('123-update-readme-file')
+    >>> from_branch('123-update-readme-file')
     123: Update Readme File
     """
     parts = name.split("-")
@@ -102,7 +83,22 @@ def get_from_branch(name: str, config=Config()) -> Issue:
     return Issue(id=id, summary=summary, config=config)
 
 
-def _get_auth_values(config):
+def from_tracker(issue_id: str, config=Config()) -> Issue:
+    """ Get Issue info by making an HTTP request. 
+    
+    :raises: requests.exceptions.HTTPError
+    """
+    url = f"{config.issue_tracker_api.strip('/')}/{issue_id}"
+    auth = _auth_values(config)
+    headers = {"content-type": "application/json"}
+    res = requests.get(url, auth=auth, headers=headers)
+    res.raise_for_status()
+    summary = res.json().get("title", "")
+
+    return Issue(issue_id, summary)
+
+
+def _auth_values(config):
     if config.issue_tracker_is_github and os.getenv("MGIT_GITHUB_USERNAME"):
         return (
             os.getenv("MGIT_GITHUB_USERNAME"),

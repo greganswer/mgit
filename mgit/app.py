@@ -10,7 +10,7 @@ import shutil
 from mgit import git
 from .config import Config
 from .translator import Translator
-from .issue import Issue
+from mgit import issues
 
 
 class App:
@@ -38,13 +38,22 @@ class App:
 
     def branch(self, issue_id: str, base_branch: str):
         """ Create a branch using issue ID and title. """
+        # TODO: Validate Inputs
+        #   - issue_id present
+        #   - username present in os.getenv("MGIT_GITHUB_USERNAME") or similar
+        #   - token present in os.getenv("MGIT_GITHUB_API_TOKEN") or similar
+
         if not base_branch:
             base_branch = git.default_base_branch()
 
-        new_branch = self.get_issue_or_abort(issue_id).branch_name
+        try:
+            new_branch = issues.from_tracker(issue_id, self._config).branch_name
+        except (requests.exceptions.HTTPError, requests.exceptions.Timeout) as e:
+            self.abort(e)
+
         self.echo(self._translator.create_branch_warning())
         self.confirm_or_abort()
-        git.new_branch_off(base_branch)
+        git.new_branch_off(base_branch, new_branch)
 
     # def commit(self, message: str, issue_id: str):
     #     """ Create a commit and push to GitHub. """
@@ -202,47 +211,6 @@ class App:
             subprocess.call(f"hub {command}", shell=True)
         except subprocess.CalledProcessError as e:
             self.abort(e, e.returncode)
-
-    # Issue Helpers
-
-    # TODO: add abort=True and remove function below.
-    def get_issue(self, issue_id: str) -> Issue:
-        """ Get Issue info by making an HTTP request. """
-        url = f"{self._config.issue_tracker_api.strip('/')}/{issue_id}"
-        auth = None
-        if self._config.issue_tracker_is_github and os.getenv("MGIT_GITHUB_USERNAME"):
-            auth = (
-                (os.getenv("MGIT_GITHUB_USERNAME"), os.getenv("MGIT_GITHUB_API_TOKEN")),
-            )
-        try:
-            headers = {"content-type": "application/json"}
-            res = requests.get(url, headers=headers, auth=auth)
-            res.raise_for_status()
-        except requests.exceptions.HTTPError as e:
-            # TODO: Determine how to get the ENV vars to persist.
-            # issue_tracker = self._config.issue_tracker
-            # if '401 Client Error: Unauthorized' in str(e):
-            # TODO: Extract method
-            #      username = click.prompt(f'Please enter your {issue_tracker} username', type=str)
-            #      token = click.prompt(f'Please enter your {issue_tracker} API token', type=str, hide_input=True)
-            #      auth=(
-            #          os.getenv("MGIT_GITHUB_USERNAME"),
-            #          os.getenv("MGIT_GITHUB_API_TOKEN"),
-            #      ),
-            # else:
-            raise e
-        title = ""
-        if self._config.issue_tracker_is_github:
-            title = res.json()["title"]
-        return Issue(issue_id, title)
-
-    def get_issue_or_abort(self, issue_id: str) -> Issue:
-        """ Get the issue by ID or exit the program. """
-        try:
-            return self.get_issue(issue_id)
-        except requests.exceptions.HTTPError as e:
-            self.log(e)
-            sys.exit(1)
 
     # Click Helpers
 
