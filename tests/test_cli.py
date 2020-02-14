@@ -22,9 +22,9 @@ class GitTestCase(unittest.TestCase):
         self.assertIn("Usage: mgit [OPTIONS] COMMAND [ARGS]...", result.output)
         self.assertEqual(0, result.exit_code)
 
-    @mock.patch("mgit.git.new_branch_off")
+    @mock.patch("mgit.git.create_branch")
     @mock.patch("mgit.issues.requests")
-    def test_branch(self, mock_requests, mock_new_branch_off):
+    def test_branch(self, mock_requests, mock_create_branch):
         # Create a new Mock to imitate a Response
         mock_response = mock.Mock(
             **{"status_code": 200, "json.return_value": {"title": "update readme file"}}
@@ -37,7 +37,7 @@ class GitTestCase(unittest.TestCase):
         expected = f"This will create a branch off master named {NEW_BRANCH}"
         self.assertIn(expected, result.output, msg=result.exception)
         self.assertEqual(0, result.exit_code)
-        mock_new_branch_off.assert_called_with("master", NEW_BRANCH)
+        mock_create_branch.assert_called_with("master", NEW_BRANCH)
 
     @mock.patch("mgit.issues.requests")
     def test_branch_exceptions(self, mock_requests):

@@ -51,9 +51,9 @@ class GitTestCase(unittest.TestCase):
             self.assertEqual(branch, git.default_base_branch())
 
     @mock.patch("mgit.git.subprocess.call")
-    def test_new_branch_off(self, mock_call):
+    def test_create_branch(self, mock_call):
         new_branch = "my_new_branch"
-        git.new_branch_off(BASE_BRANCH, new_branch)
+        git.create_branch(BASE_BRANCH, new_branch)
         mock_call.assert_has_calls(
             [
                 mock.call(["git", "checkout", BASE_BRANCH]),

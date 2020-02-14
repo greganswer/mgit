@@ -53,7 +53,7 @@ class App:
 
         self.echo(self._translator.create_branch_warning(base_branch, new_branch))
         self.confirm_or_abort()
-        git.new_branch_off(base_branch, new_branch)
+        git.create_branch(base_branch, new_branch)
 
     # def commit(self, message: str, issue_id: str):
     #     """ Create a commit and push to GitHub. """
@@ -112,7 +112,7 @@ class App:
 
     #     self.echo(self._translator.update_base_branch_confirmation(base_branch))
     #     if self.confirm():
-    #         self.rebase_off_branch(base_branch)
+    #         self.rebase(base_branch)
 
     #     body = self._translator.pull_request_body(
     #         title, self._config.issue_tracker, issue.id, issue.url
@@ -129,7 +129,7 @@ class App:
 
     # # Helpers
 
-    # def rebase_off_branch(self, branch):
+    # def rebase(self, branch):
     #     self.execute_or_abort(f"git checkout {branch}")
     #     self.execute_or_abort(f"git pull")
     #     self.execute_or_abort(f"git checkout -")

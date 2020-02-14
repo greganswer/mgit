@@ -39,15 +39,14 @@ def branch_exists(branch: str) -> bool:
 
 
 # TODO: Rename to `new_branch`
-def new_branch_off(base_branch: str, new_branch: str):
+def create_branch(base_branch: str, new_branch: str):
     """ Create a new branch off a base branch. """
     subprocess.call(["git", "checkout", base_branch])
     subprocess.call(["git", "pull"])
     subprocess.call(["git", "checkout", "-b", new_branch])
 
 
-# TODO: Rename to `rebase`
-def rebase_off_branch(base_branch: str):
+def rebase(base_branch: str):
     """ Rebase off a base branch. """
     subprocess.call(["git", "checkout", base_branch])
     subprocess.call(["git", "pull"])
