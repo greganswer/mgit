@@ -55,7 +55,7 @@ class Issue:
         Return the URL for this issue
 
         >>> config = configs.Config({"issue_tracker_api": "http://example.com/"})
-        >>> Issue(id=7, config=config)
+        >>> Issue(id=7, config=config).url
         http://example.com/7
         """
         return f"{self._config.issue_tracker_api}/{self._id}"

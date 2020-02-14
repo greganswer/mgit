@@ -2,7 +2,8 @@
 References:
 - https://www.toptal.com/python/an-introduction-to-mocking-in-python
 - https://realpython.com/python-mock-library
-- https://click.palletsprojects.com/en/7.x/testing/
+- https://click.palletsprojects.com/en/7.x/testing
+- https://docs.python.org/3/library/unittest.html
 """
 import unittest
 import mock
@@ -11,11 +12,13 @@ from requests.exceptions import Timeout, HTTPError
 from subprocess import DEVNULL, CalledProcessError as ProcessError
 
 from mgit.cli import cli
+from mgit import configs
 
 BASE_BRANCH = "my_base_branch"
 NEW_BRANCH = "jir-472-update-readme-file"
 ISSUE_ID = "JIR-472"
 ISSUE_TITLE = "JIR-472: Update Readme File"
+ISSUE_TRACKER_API = "https://api.github.com/repos/fake_user/fake_repo/issues"
 REQUEST_TIMEOUT = Timeout("HTTP Request Timeout")
 REQUEST_HTTP_ERROR = HTTPError("HTTP Request Error")
 
@@ -156,8 +159,23 @@ class GitTestCase(unittest.TestCase):
         self.assertIn(str(REQUEST_HTTP_ERROR), result.output, msg=result.exception)
         self.assertEqual(1, result.exit_code)
 
-    def test_open(self):
-        pass
+    # TODO: Mock the "issue_tracker_api" instance attribute
+    # @mock.patch("mgit.configs.Config")
+    # # @mock.patch.object(configs.Config, "issue_tracker_api")
+    # @mock.patch("mgit.app.git")
+    # @mock.patch("mgit.app.webbrowser")
+    # def test_open(self, mock_webbrowser, mock_git, mock_config):
+    #     mock_git.current_branch.return_value = NEW_BRANCH
+    #     # mock_config.issue_tracker_api = ISSUE_TRACKER_API
+
+    #     instance = mock_config.return_value
+    #     instance.issue_tracker_api = ISSUE_TRACKER_API
+
+    #     # mock_issue_tracker_api.return_value = ISSUE_TRACKER_API
+    #     url = f"{ISSUE_TRACKER_API.strip('/')}/{ISSUE_ID}"
+
+    #     result = self.runner.invoke(cli, ["open"])
+    #     mock_webbrowser.open.assert_called_with(url)
 
     def test_pull_request(self):
         pass

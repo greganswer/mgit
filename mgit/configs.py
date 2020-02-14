@@ -56,6 +56,11 @@ class Config(dict):
     def issue_tracker_is_github(self) -> bool:
         return "github.com" in self.issue_tracker_api
 
+    # TODO: Determine if necessary.
+    # @property
+    # def issue_tracker_api(self) -> str:
+    #     return self["issue_tracker_api"]
+
 
 def loaded() -> bool:
     return os.path.isfile(FILENAME)

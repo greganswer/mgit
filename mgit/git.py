@@ -38,7 +38,6 @@ def branch_exists(branch: str) -> bool:
         return False
 
 
-# TODO: Rename to `new_branch`
 def create_branch(base_branch: str, new_branch: str):
     """ Create a new branch off a base branch. """
     subprocess.call(["git", "checkout", base_branch])
@@ -65,3 +64,7 @@ def push(branch: str):
     execute.call(["git", "push", "-f"], abort=False)
     execute.call(["git", "push", "--set-upstream", "origin", branch], abort=False)
 
+
+def assignee() -> str:
+    """ Get the assignee or empty string. """
+    return execute.output(["git", "config", "--global", "user.handle"], abort=False)

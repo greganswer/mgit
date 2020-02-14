@@ -6,6 +6,7 @@ import json
 import os
 import shlex
 import shutil
+import webbrowser
 
 from mgit import git
 from mgit import configs
@@ -64,7 +65,9 @@ class App:
                 if issue_id:
                     issue = issues.from_tracker(issue_id)
                 else:
-                    issue = issues.from_branch(git.current_branch())
+                    issue = issues.from_branch(
+                        git.current_branch(), config=self._config
+                    )
 
                 message = str(issue)
                 if self._config.issue_tracker_is_github:
@@ -83,52 +86,45 @@ class App:
         git.commit_all(message)
         git.push(git.current_branch())
 
-    # def open(self):
-    #     """ Open an issue in the Google Chrome browser. """
+    def open(self):
+        """ Open an issue in the user's default browser. """
+        issue = issues.from_branch(git.current_branch(), config=self._config)
+        webbrowser.open(issue.url)
 
-    # def pull_request(self, base_branch: str):
-    #     """ Create a GitHub Pull Request for the specified branch. """
-    #     if not base_branch:
-    #         base_branch = default_base_branch()
+    def pull_request(self, base_branch: str):
+        """ Create a GitHub Pull Request for the specified branch. """
+        if not base_branch:
+            base_branch = git.default_base_branch()
 
-    #     issue = Issue.from_branch(current_branch())
-    #     title = message = issue.title
-    #     if issue and self._config.issue_tracker_is_github:
-    #         message += f"\n\nCloses #{issue.id}"
+        issue = issues.from_branch(git.current_branch())
+        title = message = issue.title
+        if issue and self._config.issue_tracker_is_github:
+            message += f"\n\nCloses #{issue.id}"
 
-    #     self.echo(self._translator.pull_request_warning(message, base_branch, title))
-    #     self.confirm_or_abort()
-    #     self.safe_execute("git add .")
-    #     # TODO: Extract to git package
-    #     # TODO: Try to replace with the following:
-    #     #       self.execute(f'git commit -m "{message}"', abort=False, shell=True) # TODO: remove shell=True
-    #     try:
-    #         subprocess.call(f'git commit -m "{message}"', shell=True)
-    #     except subprocess.CalledProcessError:
-    #         pass
+        self.echo(self._translator.pull_request_warning(message, base_branch, title))
+        self.confirm_or_abort()
+        git.commit_all(message)
 
-    #     self.echo(self._translator.update_base_branch_confirmation(base_branch))
-    #     if self.confirm():
-    #         self.rebase(base_branch)
+        self.echo(self._translator.update_base_branch_confirmation(base_branch))
+        if self.confirm():
+            git.rebase(base_branch)
+            git.push(git.current_branch())
 
-    #     body = self._translator.pull_request_body(
-    #         title, self._config.issue_tracker, issue.id, issue.url
-    #     )
-    #     try:
-    #         assignee = self.execute("git config --global user.handle")
-    #     except subprocess.CalledProcessError:
-    #         assignee = ""
+        body = self._translator.pull_request_body(
+            title, self._config.issue_tracker, issue.id, issue.url
+        )
+        try:
+            assignee = self.execute("git config --global user.handle")
+        except subprocess.CalledProcessError:
+            assignee = ""
 
-    #     self.execute_hub_command(
-    #         f'pull-request -fpo -b {base_branch} -m "{body}" -a {assignee}'
-    #     )
-    #     self.safe_execute("git push")
+        git.pull_request()
+        self.execute_hub_command(
+            f'pull-request -fpo -b {base_branch} -m "{body}" -a {assignee}'
+        )
+        self.safe_execute("git push")
 
     # # Helpers
-
-    # def rebase(self, branch):
-    #     git.rebase(branch)
-    #     git.push(git.current_branch())
 
     def _config_init(self):
         """ Initialize the config values for this Git repository. """
