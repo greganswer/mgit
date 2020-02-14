@@ -57,7 +57,7 @@ def rebase(base_branch: str):
 def commit_all(message: str):
     """ Add all files and commit. Ignores errors. """
     execute.call(["git", "add", "."], abort=False)
-    execute.call(f'git commit -m "{message}"', shell=True)
+    execute.call(f'git commit -m "{message}"', abort=False, shell=True)
 
 
 def push(branch: str):

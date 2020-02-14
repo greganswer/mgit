@@ -1,13 +1,14 @@
 import json
+import os
+
+FILENAME = "mgit.json"
+ALLOWED_ATTRIBUTES = ["issue_tracker_api"]
 
 
 class Config(dict):
-    allowed_attributes = ["issue_tracker_api"]
-    filename = "mgit.json"
-
     def __getattr__(self, key):
         """ Load the JSON file and get the value. """
-        if key not in Config.allowed_attributes:
+        if key not in ALLOWED_ATTRIBUTES:
             raise KeyError(f"'{key}' is not an allowed attribute")
 
         self.load()
@@ -19,7 +20,7 @@ class Config(dict):
 
         This also removes the trailing slash from URL values.
         """
-        if key not in Config.allowed_attributes:
+        if key not in ALLOWED_ATTRIBUTES:
             raise KeyError(f"'{key}' is not an allowed attribute")
 
         if "http://" in value or "https://" in value:
@@ -31,14 +32,14 @@ class Config(dict):
     def load(self, force=False):
         """ Lazy load data from the JSON file. """
         if not self.get("issue_tracker_api") or force:
-            with open(Config.filename) as infile:
+            with open(FILENAME) as infile:
                 data = json.load(infile)
-                for key in Config.allowed_attributes:
+                for key in ALLOWED_ATTRIBUTES:
                     self[key] = data[key]
 
     def save(self):
         """ Save data to the JSON file. """
-        with open(Config.filename, "w") as outfile:
+        with open(FILENAME, "w") as outfile:
             json.dump(self, outfile)
 
     # Issue tracker values
@@ -54,3 +55,7 @@ class Config(dict):
     @property
     def issue_tracker_is_github(self) -> bool:
         return "github.com" in self.issue_tracker_api
+
+
+def loaded() -> bool:
+    return os.path.isfile(FILENAME)

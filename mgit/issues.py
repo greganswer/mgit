@@ -2,11 +2,11 @@ import inflection
 import requests
 import os
 
-from .config import Config
+from mgit import configs
 
 
 class Issue:
-    def __init__(self, id: str, summary: str, config=Config()):
+    def __init__(self, id: str, summary: str, config=configs.Config()):
         """
         :param id: Issue ID.
         :param summary: Issue summary.
@@ -19,8 +19,7 @@ class Issue:
         """
         Return ID and title case summary of the issue.
 
-        >>> issue = Issue(id='jir-123', summary='Update readme.md file')
-        >>> print(issue)
+        >>> Issue(id='jir-123', summary='Update readme.md file')
         JIR-123: Update Readme.Md File
         """
         return f"{self._id}: {self.title}"
@@ -45,8 +44,7 @@ class Issue:
         """
         Titleized the summary of the issue.
 
-        >>> issue = Issue(summary='Update readme.md file')
-        >>> print(issue.title)
+        >>> Issue(summary='Update readme.md file')
         Update Readme.Md File
         """
         return inflection.titleize(self._summary)
@@ -56,17 +54,18 @@ class Issue:
         """
         Return the URL for this issue
 
-        >>> config = Config({"issue_tracker_api": "http://example.com/"})
-        >>> issue = Issue(id=7, config=config)
-        >>> print(issue.url)
+        >>> config = configs.Config({"issue_tracker_api": "http://example.com/"})
+        >>> Issue(id=7, config=config)
         http://example.com/7
         """
         return f"{self._config.issue_tracker_api}/{self._id}"
 
 
-def from_branch(name: str, config=Config()) -> Issue:
+def from_branch(name: str, config=configs.Config()) -> Issue:
     """
     Create an Issue object from the name of a branch.
+
+    :raises: ValueError if branch name does not contain an ID.
 
     >>> from_branch('jir-123-update-readme-file')
     JIR-123: Update Readme File
@@ -83,7 +82,7 @@ def from_branch(name: str, config=Config()) -> Issue:
     return Issue(id=id, summary=summary, config=config)
 
 
-def from_tracker(issue_id: str, config=Config()) -> Issue:
+def from_tracker(issue_id: str, config=configs.Config()) -> Issue:
     """ Get Issue info by making an HTTP request. 
     
     :raises: requests.exceptions.HTTPError
