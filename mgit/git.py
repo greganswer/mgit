@@ -2,8 +2,10 @@ import subprocess
 import os
 import click
 import sys
+import shutil
 
 from mgit import execute
+from mgit import translator
 
 DEFAULT_BASE_BRANCHES = ["dev", "develop", "development", "master"]
 
@@ -59,7 +61,7 @@ def commit_all(message: str):
     execute.call(f'git commit -m "{message}"', abort=False, shell=True)
 
 
-def push(branch: str):
+def push(branch=current_branch()):
     """ Push the changes to the remote branch. Ignores errors. """
     execute.call(["git", "push", "-f"], abort=False)
     execute.call(["git", "push", "--set-upstream", "origin", branch], abort=False)
@@ -68,3 +70,27 @@ def push(branch: str):
 def assignee() -> str:
     """ Get the assignee or empty string. """
     return execute.output(["git", "config", "--global", "user.handle"], abort=False)
+
+
+# GitHub
+
+
+def hub_installed() -> bool:
+    """ Determine `hub` CLI tool is installed. """
+    return shutil.which("hub")
+
+
+def pull_request(base_branch: str, body: str):
+    """ Create a pull request on GitHub """
+    if not hub_installed():
+        raise HubCLIMissing()
+
+    execute.call(
+        f'hub pull-request -fpo -b {base_branch} -m "{body}" -a {assignee()}',
+        shell=True,
+    )
+
+
+class HubCLIMissing(Exception):
+    def __init__(self, *args, **kwargs):
+        super().__init__(translator.Translator().hub_cli_missing())

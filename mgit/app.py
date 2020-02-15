@@ -54,7 +54,7 @@ class App:
             self.abort(e)
 
         self.echo(self._translator.create_branch_warning(base_branch, new_branch))
-        self.confirm_or_abort()
+        self.confirm(abort=True)
         git.create_branch(base_branch, new_branch)
 
     def commit(self, message: str, issue_id: str):
@@ -82,7 +82,7 @@ class App:
                 )
 
         self.echo(self._translator.commit_warning(message))
-        self.confirm_or_abort()
+        self.confirm(abort=True)
         git.commit_all(message)
         git.push(git.current_branch())
 
@@ -96,33 +96,40 @@ class App:
         if not base_branch:
             base_branch = git.default_base_branch()
 
-        issue = issues.from_branch(git.current_branch())
-        title = message = issue.title
-        if issue and self._config.issue_tracker_is_github:
-            message += f"\n\nCloses #{issue.id}"
+        # Create title and message from current branch info.
+        try:
+            issue = issues.from_branch(git.current_branch())
+            title = message = issue.title
+            if self._config.issue_tracker_is_github:
+                message += f"\n\nCloses #{issue.id}"
+        except ValueError:
+            self.abort(self._translator.branch_has_no_issue_id(git.current_branch()))
 
+        # Prompt user to commit all changes.
         self.echo(self._translator.pull_request_warning(message, base_branch, title))
-        self.confirm_or_abort()
+        self.confirm(abort=True)
         git.commit_all(message)
 
+        # Prompt user to update the current branch.
         self.echo(self._translator.update_base_branch_confirmation(base_branch))
         if self.confirm():
             git.rebase(base_branch)
             git.push(git.current_branch())
 
-        body = self._translator.pull_request_body(
-            title, self._config.issue_tracker, issue.id, issue.url
-        )
+        # Make the pull request and push the changes to the remote branch.
         try:
-            assignee = self.execute("git config --global user.handle")
-        except subprocess.CalledProcessError:
-            assignee = ""
+            body = self._translator.pull_request_body(
+                title, self._config.issue_tracker, issue.id, issue.url
+            )
+            git.pull_request(base_branch, body)
+            git.push()
 
-        git.pull_request()
-        self.execute_hub_command(
-            f'pull-request -fpo -b {base_branch} -m "{body}" -a {assignee}'
-        )
-        self.safe_execute("git push")
+        except (
+            requests.exceptions.HTTPError,
+            requests.exceptions.Timeout,
+            git.HubCLIMissing,
+        ) as e:
+            self.abort(e)
 
     # # Helpers
 
@@ -134,38 +141,9 @@ class App:
         )
         self._config.save()
 
-    # TODO: Try to use this method instead of the 3 below.
-    # TODO: Rename to `execute` once ready.
-    def execute_prime(self, command: str, abort=True):
-        """ Execute a command on the terminal and log errors to log file. """
-        try:
-            if self._verbose:
-                self.log(f"Executing command -> {command}")
-            return subprocess.check_output(
-                shlex.split(command), stderr=self._log_file
-            ).decode("utf-8")
-        except subprocess.CalledProcessError as e:
-            if abort:
-                self.abort(e, e.returncode)
-
-    # TODO: replace aborts with this
     def abort(self, message, code=1):
-        self.log(message)
+        self.echo(message)
         sys.exit(code)
-
-    def execute_hub_command(self, command):
-        """
-        Execute a command using the Hub CLI.
-
-        :param command: The command hub will execute.
-        """
-        hub_installed = shutil.which("hub")
-        if not hub_installed:
-            self.abort(self._translator.hub_cli_missing())
-        try:
-            subprocess.call(f"hub {command}", shell=True)
-        except subprocess.CalledProcessError as e:
-            self.abort(e, e.returncode)
 
     # Click Helpers
 
@@ -173,17 +151,6 @@ class App:
         """ Echo a message to the terminal. """
         click.echo(message)
 
-    # TODO: Remove this duplicate method
-    def confirm_or_abort(self):
-        """ Abort unless the user confirms that they wish to continue. """
-        click.confirm("Do you wish to continue?", abort=True)
-
     def confirm(self, message="Do you wish to continue?", abort=False) -> bool:
         """ Get user confirmation. """
         return click.confirm(message, abort=abort)
-
-    def log(self, message: str):
-        """ Log message to the log_file. """
-        # TODO: Delete one
-        click.echo(message)
-        click.echo(message, file=self._log_file)
