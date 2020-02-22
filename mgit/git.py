@@ -85,9 +85,6 @@ def hub_installed() -> bool:
 
 def pull_request(base_branch: str, body: str):
     """ Create a pull request on GitHub """
-    if not hub_installed():
-        raise HubCLIMissing()
-
     execute.call(
         f'hub pull-request -fpo -b {base_branch} -m "{body}" -a {assignee()}',
         shell=True,
