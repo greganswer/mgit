@@ -98,7 +98,7 @@ def open(app):
 @cli.command(["pull-request", "pr"])
 @click.option("-b", "--base-branch", help="The base branch to perform this action on.")
 @click.pass_obj
-def pull_request(app, base_branch: str):
+def pull_request(app, base_branch=None):
     """
     Create a GitHub Pull Request for the specified branch.
 

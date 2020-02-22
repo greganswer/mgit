@@ -61,8 +61,11 @@ def commit_all(message: str):
     execute.call(f'git commit -m "{message}"', abort=False, shell=True)
 
 
-def push(branch=current_branch()):
+def push(branch=None):
     """ Push the changes to the remote branch. Ignores errors. """
+    if not branch:
+        branch = default_base_branch()
+
     execute.call(["git", "push", "-f"], abort=False)
     execute.call(["git", "push", "--set-upstream", "origin", branch], abort=False)
 
@@ -90,7 +93,3 @@ def pull_request(base_branch: str, body: str):
         shell=True,
     )
 
-
-class HubCLIMissing(Exception):
-    def __init__(self, *args, **kwargs):
-        super().__init__(translator.Translator().hub_cli_missing())

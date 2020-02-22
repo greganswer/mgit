@@ -1,9 +1,10 @@
 import click  # https://click.palletsprojects.com/en/7.x/
 
-# TODO: Extract to JSON file.
+# TODO: Extract to JSON or YAML file.
 MESSAGES = {
     "create_branch_warning": "This will create a branch off {base_branch} named {new_branch}.",
     "issue_tracker_api_prompt": "Enter the API URL for your issue tracker",
+    "hub_cli_missing": "This script relies on GitHub's 'hub' command line tool.\nVisit https://github.com/github/hub to install it",
 }
 
 

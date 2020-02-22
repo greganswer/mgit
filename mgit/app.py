@@ -10,13 +10,17 @@ import webbrowser
 
 from mgit import git
 from mgit import configs
-from .translator import Translator
+from mgit import translator
 from mgit import issues
 
 
 class App:
     def __init__(
-        self, log_file, verbose: bool, config=configs.Config(), translator=Translator()
+        self,
+        log_file,
+        verbose: bool,
+        config=configs.Config(),
+        translator=translator.Translator(),
     ):
         """
         Initialize the app by validating the environment.
@@ -53,13 +57,13 @@ class App:
         except (requests.exceptions.HTTPError, requests.exceptions.Timeout) as e:
             self.abort(e)
 
+        # TODO: Write a test for when the user says no.
         self.echo(self._translator.create_branch_warning(base_branch, new_branch))
         self.confirm(abort=True)
         git.create_branch(base_branch, new_branch)
 
     def commit(self, message: str, issue_id: str):
         """ Create a commit and push to GitHub. """
-        issue = None
         if not message:
             try:
                 if issue_id:
@@ -81,6 +85,7 @@ class App:
                     self._translator.branch_has_no_issue_id(git.current_branch())
                 )
 
+        # TODO: Write a test for when the user says no.
         self.echo(self._translator.commit_warning(message))
         self.confirm(abort=True)
         git.commit_all(message)
@@ -93,6 +98,9 @@ class App:
 
     def pull_request(self, base_branch: str):
         """ Create a GitHub Pull Request for the specified branch. """
+        if not git.hub_installed():
+            self.abort(translator.MESSAGES["hub_cli_missing"])
+
         if not base_branch:
             base_branch = git.default_base_branch()
 
@@ -106,11 +114,13 @@ class App:
             self.abort(self._translator.branch_has_no_issue_id(git.current_branch()))
 
         # Prompt user to commit all changes.
+        # TODO: Write a test for when the user says no.
         self.echo(self._translator.pull_request_warning(message, base_branch, title))
         self.confirm(abort=True)
         git.commit_all(message)
 
         # Prompt user to update the current branch.
+        # TODO: Write a test for when the user says no.
         self.echo(self._translator.update_base_branch_confirmation(base_branch))
         if self.confirm():
             git.rebase(base_branch)
@@ -124,11 +134,7 @@ class App:
             git.pull_request(base_branch, body)
             git.push()
 
-        except (
-            requests.exceptions.HTTPError,
-            requests.exceptions.Timeout,
-            git.HubCLIMissing,
-        ) as e:
+        except subprocess.CalledProcessError as e:
             self.abort(e)
 
     # # Helpers

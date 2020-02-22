@@ -13,6 +13,7 @@ from subprocess import DEVNULL, CalledProcessError as ProcessError
 
 from mgit.cli import cli
 from mgit import configs
+from mgit import git
 
 BASE_BRANCH = "my_base_branch"
 NEW_BRANCH = "jir-472-update-readme-file"
@@ -177,8 +178,32 @@ class GitTestCase(unittest.TestCase):
     #     result = self.runner.invoke(cli, ["open"])
     #     mock_webbrowser.open.assert_called_with(url)
 
-    def test_pull_request(self):
-        pass
+    @mock.patch("mgit.app.git")
+    def test_pull_request(self, mock_git):
+        mock_git.current_branch.return_value = NEW_BRANCH
+        mock_git.default_base_branch.return_value = "master"
+
+        result = self.runner.invoke(cli, ["pull-request"], input="yes")
+
+        self.assertIn(
+            "Create a pull request to the", result.output, msg=result.exception,
+        )
+        self.assertIn("Update Readme File", result.output, msg=result.exception)
+        self.assertEqual(0, result.exit_code)
+        mock_git.pull_request.assert_called_once()
+        mock_git.push.assert_called_once
+
+    @mock.patch("mgit.app.git")
+    def test_pull_request_exceptions(self, mock_git):
+        mock_git.current_branch.return_value = NEW_BRANCH
+        mock_git.hub_installed.return_value = False
+        mock_git.default_base_branch.return_value = "master"
+
+        result = self.runner.invoke(cli, ["pull-request",], input="yes\nno")
+
+        expected = "This script relies on GitHub's 'hub' command line tool"
+        self.assertIn(expected, result.output, msg=result.exception)
+        self.assertEqual(1, result.exit_code)
 
 
 # Run the tests
