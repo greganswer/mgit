@@ -22,7 +22,9 @@ class Issue:
         >>> Issue(id='jir-123', summary='Update readme.md file')
         JIR-123: Update Readme.Md File
         """
-        return f"{self._id}: {self.title}"
+        if self._id and self.title:
+            return f"{self._id}: {self.title}"
+        return self.title
 
     @property
     def id(self) -> str:
@@ -87,10 +89,12 @@ def from_tracker(issue_id: str, config=configs.Config()) -> Issue:
     
     :raises: requests.exceptions.HTTPError
     """
-    url = f"{config.issue_tracker_api.strip('/')}/{issue_id}"
-    auth = _auth_values(config)
-    headers = {"content-type": "application/json"}
-    res = requests.get(url, auth=auth, headers=headers)
+    res = requests.get(
+        f"{config.issue_tracker_api.strip('/')}/{issue_id}",
+        auth=_auth_values(config),
+        headers={"content-type": "application/json"},
+    )
+
     res.raise_for_status()
     summary = res.json().get("title", "")
 
