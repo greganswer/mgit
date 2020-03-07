@@ -35,8 +35,7 @@ class Issue:
         """
         Get the branch name from ID and title.
 
-        >>> issue = Issue(id='jir-123', summary='Update readme.md file')
-        >>> issue.branch_name()
+        >>> Issue(id='jir-123', summary='Update readme.md file').branch_name()
         jir-123-update-readme-file
         """
         return inflection.parameterize(f"{self._id} {self._summary}")
@@ -71,8 +70,6 @@ def from_branch(name: str, config=configs.Config()) -> Issue:
 
     >>> from_branch('jir-123-update-readme-file')
     JIR-123: Update Readme File
-    >>> from_branch('123-update-readme-file')
-    123: Update Readme File
     """
     parts = name.split("-")
     for index, part in enumerate(parts):

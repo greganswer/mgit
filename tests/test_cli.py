@@ -100,7 +100,7 @@ class GitTestCase(unittest.TestCase):
         )
         self.assertIn("Update Readme File", result.output, msg=result.exception)
         self.assertEqual(0, result.exit_code)
-        mock_git.commit_all.assert_called_with(f"{ISSUE_TITLE}\n\nCloses #JIR-472")
+        mock_git.commit_all.assert_called_with(f"{ISSUE_TITLE}")
         mock_git.push.assert_called_with(NEW_BRANCH)
 
     @mock.patch("mgit.app.git")
@@ -139,7 +139,7 @@ class GitTestCase(unittest.TestCase):
         )
         self.assertIn(ISSUE_TITLE, result.output, msg=result.exception)
         self.assertEqual(0, result.exit_code)
-        mock_git.commit_all.assert_called_with(f"{ISSUE_TITLE}\n\nCloses #JIR-472")
+        mock_git.commit_all.assert_called_with(f"{ISSUE_TITLE}")
         mock_git.push.assert_called_with(NEW_BRANCH)
 
     @mock.patch("mgit.issues.requests")
@@ -183,7 +183,7 @@ class GitTestCase(unittest.TestCase):
         mock_git.current_branch.return_value = NEW_BRANCH
         mock_git.default_base_branch.return_value = "master"
 
-        result = self.runner.invoke(cli, ["pull-request"], input="yes")
+        result = self.runner.invoke(cli, ["pr"], input="yes")
 
         self.assertIn(
             "Create a pull request to the", result.output, msg=result.exception,
@@ -199,7 +199,7 @@ class GitTestCase(unittest.TestCase):
         mock_git.hub_installed.return_value = False
         mock_git.default_base_branch.return_value = "master"
 
-        result = self.runner.invoke(cli, ["pull-request",], input="yes\nno")
+        result = self.runner.invoke(cli, ["pr",], input="yes\nno")
 
         expected = "This script relies on GitHub's 'hub' command line tool"
         self.assertIn(expected, result.output, msg=result.exception)

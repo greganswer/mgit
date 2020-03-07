@@ -1,16 +1,11 @@
 import click  # https://click.palletsprojects.com/en/7.x/
 import sys
 
-from .click_helpers import CustomMultiCommand, Mutex
 from .app import App
 from ._version import __version__
 
-
-@click.group(
-    name="mgit",  # TODO: rename function to mgit
-    cls=CustomMultiCommand,
-    context_settings={"help_option_names": ["-h", "--help"]},
-)
+# TODO: rename function to mgit
+@click.group(name="mgit", context_settings={"help_option_names": ["-h", "--help"]})
 @click.option(
     "--log-file",
     "-l",
@@ -52,20 +47,8 @@ def branch(app, issue_id: str, base_branch: str):
     app.branch(issue_id, base_branch)
 
 
-@click.option(
-    "-m",
-    "--message",
-    help="The commit message.",
-    cls=Mutex,
-    not_required_if=["issue_id"],
-)
-@click.option(
-    "--issue-id",
-    "--id",
-    help="The ID of the issue being worked on.",
-    cls=Mutex,
-    not_required_if=["message"],
-)
+@click.option("-m", "--message", help="The commit message.")
+@click.option("--issue-id", "--id", help="The ID of the issue being worked on.")
 @cli.command()
 @click.pass_obj
 def commit(app, message: str, issue_id: str):
@@ -95,10 +78,10 @@ def open(app):
     app.open()
 
 
-@cli.command(["pull-request", "pr"])
+@cli.command()
 @click.option("-b", "--base-branch", help="The base branch to perform this action on.")
 @click.pass_obj
-def pull_request(app, base_branch=None):
+def pr(app, base_branch=None):
     """
     Create a GitHub Pull Request for the specified branch.
 
@@ -111,7 +94,7 @@ def pull_request(app, base_branch=None):
         $ mgit pull-request
         $ mgit pull-request --base-branch develop
     """
-    app.pull_request(base_branch)
+    app.pr(base_branch)
 
 
 if __name__ == "__main__":

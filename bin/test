@@ -42,11 +42,8 @@ def watch(verbose):
     click.echo("Watching python files...\n")
     cd_project_root()
     watch_command = "nodemon --delay 2 --ext py --exec"
-    if verbose:
-        command = watch_command + ' "python3 -m unittest -v tests/**.py"'
-    else:
-        command = watch_command + TEST_COMMAND
-
+    additional = ' "python3 -m unittest -v tests/**.py"' if verbose else TEST_COMMAND
+    command = watch_command + additional
     execute.call(command, shell=True, verbose=verbose)
     os.chdir(INITIAL_DIRECTORY)
 

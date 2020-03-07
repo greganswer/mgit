@@ -98,7 +98,7 @@ class App:
         issue = issues.from_branch(git.current_branch(), config=self._config)
         webbrowser.open(issue.url)
 
-    def pull_request(self, base_branch: str):
+    def pr(self, base_branch: str):
         """ Create a GitHub Pull Request for the specified branch. """
         if not git.hub_installed():
             self.abort(translator.MESSAGES["hub_cli_missing"])
