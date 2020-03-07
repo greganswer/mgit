@@ -6,7 +6,7 @@ from mgit import configs
 
 
 class Issue:
-    def __init__(self, id: str, summary: str, config=configs.Config()):
+    def __init__(self, id: str = "", summary: str = "", config=configs.Config()):
         """
         :param id: Issue ID.
         :param summary: Issue summary.
@@ -65,7 +65,7 @@ class Issue:
 
 def from_branch(name: str, config=configs.Config()) -> Issue:
     """
-    Create an Issue object from the name of a branch.
+    Create an issue from the branch name. Uses O(n) time and space.
 
     :raises: ValueError if branch name does not contain an ID.
 
@@ -79,13 +79,13 @@ def from_branch(name: str, config=configs.Config()) -> Issue:
         if part.isdigit():
             id = "-".join(parts[: index + 1])
             summary = " ".join(parts[index + 1 :])
-            break
+            return Issue(id=id, summary=summary, config=config)
 
-    return Issue(id=id, summary=summary, config=config)
+    return Issue(config=config)
 
 
 def from_tracker(issue_id: str, config=configs.Config()) -> Issue:
-    """ Get Issue info by making an HTTP request. 
+    """ Create an issue by making an HTTP request to the issue tracker API.
     
     :raises: requests.exceptions.HTTPError
     """

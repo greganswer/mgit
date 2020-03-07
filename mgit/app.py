@@ -75,7 +75,9 @@ class App:
 
                 message = str(issue)
                 if self._config.issue_tracker_is_github:
-                    message += self._translator.closes_issue_id(issue.id)
+                    # TODO: Ask the user if this issue is being closed
+                    # message += self._translator.closes_issue_id(issue.id)
+                    pass
 
             except (requests.exceptions.HTTPError, requests.exceptions.Timeout) as e:
                 self.abort(e)
@@ -131,8 +133,8 @@ class App:
             body = self._translator.pull_request_body(
                 title, self._config.issue_tracker, issue.id, issue.url
             )
-            git.pull_request(base_branch, body)
             git.push()
+            git.pull_request(base_branch, body)
 
         except subprocess.CalledProcessError as e:
             self.abort(e)
