@@ -6,7 +6,7 @@ labels: ''
 assignees: ''
 
 ---
-```ghekin
+```gherkin
 Feature: 
   As a
   I can
